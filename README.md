@@ -1,8 +1,6 @@
 # tinder-deblur
  Simple script using the official Tinder API to get clean photos of the users who liked you
 
-Simple script using the official Tinder API to get clean photos of the users who liked you
-
 ## How to use
 
 1. install a userscript manager ([Violentmonkey](https://violentmonkey.github.io/), [Tampermonkey](https://www.tampermonkey.net/), [Greasemonkey](https://www.greasespot.net/), ...)
