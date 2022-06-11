@@ -7,6 +7,7 @@
 2. install the script:
     * either click [this link](https://raw.githubusercontent.com/tajnymag/tinder-deblur/main/tinder.user.js) and the manager will install the script for you
     * or copy the URL below and install it manually through manager's UI
+
     `https://raw.githubusercontent.com/tajnymag/tinder-deblur/main/tinder.user.js`
 3. browse the Tinder web app normally and the profiles that like you should be unblurred
 
