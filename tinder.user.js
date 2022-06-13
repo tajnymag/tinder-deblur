@@ -9,6 +9,9 @@
 // @description Simple script using the official Tinder API to get clean photos of the users who liked you
 // ==/UserScript==
 
+/**
+ * Core logic of the script
+ */
 async function unblur() {
 	const teasers = await fetch('https://api.gotinder.com/v2/fast-match/teasers', {
 		headers: { 'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') },
@@ -27,6 +30,12 @@ async function unblur() {
 	}
 }
 
+/**
+ * Awaits the first event of the specified listener
+ * @param {EventTarget} target
+ * @param {string} eventType
+ * @returns {Promise<void>}
+ */
 async function once(target, eventType) {
 	return new Promise((resolve) => {
 		target.addEventListener(eventType, () => {
@@ -36,6 +45,10 @@ async function once(target, eventType) {
 	});
 }
 
+/**
+ * Awaits until the main app element is found in DOM and returns it
+ * @returns {Promise<HTMLElement>}
+ */
 async function waitForApp() {
 	const getAppEl = (parent) => parent.querySelector('.App');
 	let appEl = getAppEl(document.body);
