@@ -14,3 +14,9 @@
 ## How does it work
 
 Tinder API returns clean profile images on requests that have their headers stripped down. The fact that it has been working for at least 2 years now is actually quite unexpected. **Be prepared** for this exploit to be patched sooner or later.
+
+## Contributors
+
+<a href="https://github.com/tajnymag/tinder-deblur/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=tajnymag/tinder-deblur" />
+</a>
