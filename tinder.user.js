@@ -27,12 +27,15 @@ async function unblur() {
 	}
 }
 
-async function once(listener, event) {
+async function waitForApp() {
 	return new Promise((resolve) => {
-		listener.addEventListener(event, () => {
-			listener.removeEventListener(event, resolve);
-			resolve();
-		});
+		new MutationObserver((_, me) => {
+			let appEl = document.querySelector('.App');
+			if (appEl) {
+				me.disconnect();
+				resolve(appEl);
+			}
+		}).observe(document, { subtree: true, childList: true });
 	});
 }
 
@@ -48,10 +51,9 @@ async function main() {
 	}
 
 	// wait for a full page load
-	await once(window, 'load');
+	const appEl = await waitForApp();
 
 	// setup navigation observer
-	const appEl = document.querySelector('.App');
 	const observer = new MutationObserver(() => {
 		if (['/app/likes-you', '/app/gold-home'].includes(location.pathname)) {
 			unblur();
