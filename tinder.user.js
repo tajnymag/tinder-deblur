@@ -27,15 +27,29 @@ async function unblur() {
 	}
 }
 
+async function once(target, eventType) {
+	return new Promise((resolve) => {
+		target.addEventListener(eventType, () => {
+			target.removeEventListener(eventType, resolve);
+			resolve();
+		});
+	});
+}
+
 async function waitForApp() {
+	const getAppEl = (parent) => parent.querySelector('.App');
+	let appEl = getAppEl(document.body);
+
+	if (appEl) return appEl;
+
 	return new Promise((resolve) => {
 		new MutationObserver((_, me) => {
-			let appEl = document.querySelector('.App');
+			appEl = getAppEl(document.body);
 			if (appEl) {
 				me.disconnect();
 				resolve(appEl);
 			}
-		}).observe(document, { subtree: true, childList: true });
+		}).observe(document.body, { subtree: true, childList: true });
 	});
 }
 
@@ -51,6 +65,7 @@ async function main() {
 	}
 
 	// wait for a full page load
+	await once(window, 'load');
 	const appEl = await waitForApp();
 
 	// setup navigation observer
