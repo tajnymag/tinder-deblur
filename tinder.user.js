@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://tinder.com/*
 // @grant       none
-// @version     2.2
+// @version     2.3
 // @author      Tajnymag
 // @downloadURL https://raw.githubusercontent.com/tajnymag/tinder-deblur/main/tinder.user.js
 // @description Simple script using the official Tinder API to get clean photos of the users who liked you
@@ -81,13 +81,18 @@ async function main() {
 	await once(window, 'load');
 	const appEl = await waitForApp();
 
-	// setup navigation observer
-	const observer = new MutationObserver(() => {
+	const pageCheckCallback = () => {
 		if (['/app/likes-you', '/app/gold-home'].includes(location.pathname)) {
 			console.debug('[TINDER DEBLUR]: Deblurring likes');
 			unblur();
 		}
-	});
+	};
+
+	// setup navigation observer
+	const observer = new MutationObserver(pageCheckCallback);
 	observer.observe(appEl, { subtree: true, childList: true });
+
+	// setup loop based observer (every 5s)
+	setInterval(pageCheckCallback, 5000);
 }
 main().catch(console.error);
