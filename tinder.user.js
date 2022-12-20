@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://tinder.com/*
 // @grant       none
-// @version     2.6
+// @version     2.7-alpha
 // @author      Tajnymag
 // @downloadURL https://raw.githubusercontent.com/tajnymag/tinder-deblur/main/tinder.user.js
 // @description Simple script using the official Tinder API to get clean photos of the users who liked you
@@ -13,24 +13,54 @@
  * Core logic of the script
  */
 async function unblur() {
-	const teasers = await fetch('https://api.gotinder.com/v2/fast-match/teasers', {
-		headers: {
-			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken'),
-			platform: 'android'
-		},
-	})
-		.then((res) => res.json())
-		.then((res) => res.data.results);
+	const teasers = await fetchTeasers();
 	const teaserEls = document.querySelectorAll('.Expand.enterAnimationContainer > div:nth-child(1)');
+	var unblurredImage = "";
 
 	for (let i = 0; i < teaserEls.length; ++i) {
 		const teaser = teasers[i];
 		const teaserEl = teaserEls[i];
 
-		const teaserImage = `https://preview.gotinder.com/${teaser.user._id}/original_${teaser.user.photos[0].id}.jpeg`;
-
-		teaserEl.style.backgroundImage = `url(${teaserImage})`;
+		if (teaser.user.photos[0].url.includes('preview')) {
+			unblurredImage=teaser.user.photos[0].url;
+		}else{
+			const userId = teaser.user.photos[0].url.slice(32, 56);
+			const user = await fetchUser(userId);
+			unblurredImage = user.photos[0].url;
+		}
+		teaserEl.style.backgroundImage = `url(${unblurredImage})`;
 	}
+}
+
+/**
+ * Fetches teaser cards using Tinder API
+ * @returns {Promise<any>}
+ */
+async function fetchTeasers() {
+	return fetch('https://api.gotinder.com/v2/fast-match/teasers', {
+		headers: {
+			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken'),
+			platform: 'android',
+		},
+	})
+		.then((res) => res.json())
+		.then((res) => res.data.results);
+}
+
+/**
+ * Fetches information about specific user using Tinder API
+ * @param {string} id
+ * @returns {Promise<any>}
+ */
+async function fetchUser(id) {
+	return fetch(`https://api.gotinder.com/user/${id}`, {
+		headers: {
+			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken'),
+			platform: 'android',
+		},
+	})
+		.then((res) => res.json())
+		.then((res) => res.results);
 }
 
 /**
