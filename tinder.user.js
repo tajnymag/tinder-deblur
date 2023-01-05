@@ -15,19 +15,21 @@
 async function unblur() {
 	const teasers = await fetchTeasers();
 	const teaserEls = document.querySelectorAll('.Expand.enterAnimationContainer > div:nth-child(1)');
-	var unblurredImage = "";
 
 	for (let i = 0; i < teaserEls.length; ++i) {
 		const teaser = teasers[i];
 		const teaserEl = teaserEls[i];
+		const teaserImage = teaser.user.photos[0].url;
 
-		if (teaser.user.photos[0].url.includes('preview')) {
-			unblurredImage=teaser.user.photos[0].url;
-		}else{
-			const userId = teaser.user.photos[0].url.slice(32, 56);
+		let unblurredImage = teaserImage;
+
+		if (teaserImage.includes('images-ssl')) {
+			const userId = teaserImage.slice(32, 56);
 			const user = await fetchUser(userId);
+
 			unblurredImage = user.photos[0].url;
 		}
+
 		teaserEl.style.backgroundImage = `url(${unblurredImage})`;
 	}
 }
