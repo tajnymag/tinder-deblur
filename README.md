@@ -13,7 +13,11 @@
 
 ## How does it work
 
-Tinder API returns clean profile images on requests that have their headers stripped down. The fact that it has been working for at least 2 years now is actually quite unexpected. **Be prepared** for this exploit to be patched sooner or later.
+Initially, Tinder API returned clean profile images on requests that had their headers stripped down. Recently Tinder patched this exploit for the web app. However, they did not patch it for their Android API. So that's what this script is using now.
+
+Also, the match's profile image URLs can be reconstructed with metadata provided by the matches endpoint.
+
+The fact that it has been working for at least 3 years now is actually quite unexpected. **Be prepared** for this exploit to be patched sooner or later.
 
 ## Contributors
 
