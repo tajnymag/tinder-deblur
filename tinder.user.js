@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://tinder.com/*
 // @grant       none
-// @version     2.7-alpha
+// @version     2.7
 // @author      Tajnymag
 // @downloadURL https://raw.githubusercontent.com/tajnymag/tinder-deblur/main/tinder.user.js
 // @description Simple script using the official Tinder API to get clean photos of the users who liked you
