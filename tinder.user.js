@@ -23,6 +23,8 @@ async function unblur() {
 
 		let unblurredImage = teaserImage;
 
+		if (teaserImage.includes('unknown')) continue;
+
 		if (teaserImage.includes('images-ssl')) {
 			const userId = teaserImage.slice(32, 56);
 			const user = await fetchUser(userId);
