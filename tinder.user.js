@@ -124,7 +124,7 @@ async function fetchUser(id) {
 		headers: {
 			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken'),
 			platform: 'android',
-			},
+		},
 	})
 		.then((res) => res.json())
 		.then((res) => res.results)
