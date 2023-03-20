@@ -86,7 +86,7 @@ class UserCache {
 	 * @returns UserCacheItem | undefined
 	 */
 	get(userId) {
-		return this.cache.get(userId)?;
+		return this.cache.get(userId);
 	}
 
 	/**
@@ -156,14 +156,9 @@ async function unblur() {
 					console.error(`Could not find info container for '${userId}'`);
 					continue;
 				}
-				
-				const userBio = user.bio;
-				
-				if(userBio.length > 128)
-					userBio = userBio.substring(0, 128) + "...";
 
 				infoContainer.outerHTML = `
-					<div class="Pos(a) Start(0) End(0) TranslateZ(0) Pe(n) H(30%) B(0)" style="background-image: linear-gradient(to top, rgb(0, 0, 0) 0%, rgba(255, 255, 255, 0) 100%);"></div>
+					<div class="Pos(a) Start(0) End(0) TranslateZ(0) Pe(n) H(30%) B(0)" style="background-image: linear-gradient(to top, rgb(0, 0, 0) 0%, rgba(255, 255, 255, 0) 100%);">
 						<div style="opacity: 0; transition: opacity 0.5s ease-out;" class="like-user-info Pos(a) D(f) Jc(sb) C($c-ds-text-primary-overlay) Ta(start) W(100%) Ai(fe) B(0) P(8px)--xs P(16px) P(20px)--l Cur(p) focus-button-style" tabindex="0">
 							<div class="Tsh($tsh-s) D(f) Fx($flx1) Fxd(c) Miw(0)">
 								<div class="Pos(a) Fz($l) B(0) Trsdu($fast) Maw(80%) D(f) Fxd(c) like-user-name">
@@ -175,8 +170,8 @@ async function unblur() {
 										<span class="As(b)" itemprop="age">${userItem.getAge()}</span>
 									</div>
 								</div>
-							<div class="Animn($anim-slide-in-left) Animdur($fast)">
-								<span class="like-user-bio">${userBio}</span>
+							<div>
+								<span class="like-user-bio" style="-webkit-box-orient: vertical; display: -webkit-box; -webkit-line-clamp: 3; max-height: 63px; overflow-y: hidden; text-overflow: ellipsis;">${user.bio}</span>
 							</div>
 						</div>
 					</div>
