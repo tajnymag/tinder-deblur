@@ -83,10 +83,10 @@ class UserCache {
 
 	/**
 	 * @param {string} userId
-	 * @returns object | undefined
+	 * @returns UserCacheItem | undefined
 	 */
 	get(userId) {
-		return this.cache.get(userId)?.user;
+		return this.cache.get(userId)?;
 	}
 
 	/**
@@ -156,6 +156,11 @@ async function unblur() {
 					console.error(`Could not find info container for '${userId}'`);
 					continue;
 				}
+				
+				const userBio = user.bio;
+				
+				if(userBio.length > 128)
+					userBio = userBio.substring(0, 128) + "...";
 
 				infoContainer.outerHTML = `
 					<div class="Pos(a) Start(0) End(0) TranslateZ(0) Pe(n) H(30%) B(0)" style="background-image: linear-gradient(to top, rgb(0, 0, 0) 0%, rgba(255, 255, 255, 0) 100%);"></div>
@@ -171,7 +176,7 @@ async function unblur() {
 									</div>
 								</div>
 							<div class="Animn($anim-slide-in-left) Animdur($fast)">
-								<span class="like-user-bio">${user.bio}</span>
+								<span class="like-user-bio">${userBio}</span>
 							</div>
 						</div>
 					</div>
