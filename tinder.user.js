@@ -9,8 +9,10 @@
 // @description Simple script using the official Tinder API to get clean photos of the users who liked you
 // ==/UserScript==
 
-var cache = [];
-var photoIntervals = [];
+// enable type checking
+// @ts-check
+// @filename: types/tampermonkey.d.ts
+
 const cache = new Set();
 const photoIntervals = new Set();
 
@@ -19,6 +21,7 @@ const photoIntervals = new Set();
  */
 async function unblur() {
 	const teasers = await fetchTeasers();
+	/** @type {NodeListOf<HTMLElement>} */
 	const teaserEls = document.querySelectorAll('.Expand.enterAnimationContainer > div:nth-child(1)');
 
 	for (let i = 0; i < teaserEls.length; ++i) {
@@ -125,13 +128,13 @@ async function unblur() {
 async function fetchTeasers() {
 	return fetch('https://api.gotinder.com/v2/fast-match/teasers', {
 		headers: {
-			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken'),
+			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
 			platform: 'android',
 		},
 	})
 		.then((res) => res.json())
 		.then((res) => res.data.results)
-		.catch(ignore => {});
+		.catch((ignore) => {});
 }
 
 /**
@@ -142,13 +145,13 @@ async function fetchTeasers() {
 async function fetchUser(id) {
 	return fetch(`https://api.gotinder.com/user/${id}`, {
 		headers: {
-			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken'),
+			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
 			platform: 'android',
 		},
 	})
 		.then((res) => res.json())
 		.then((res) => res.results)
-		.catch(ignore => {});
+		.catch((ignore) => {});
 }
 
 /**
@@ -159,10 +162,11 @@ async function fetchUser(id) {
  */
 async function once(target, eventType) {
 	return new Promise((resolve) => {
-		target.addEventListener(eventType, () => {
-			target.removeEventListener(eventType, resolve);
+		const resolver = () => {
+			target.removeEventListener(eventType, resolver);
 			resolve();
-		});
+		};
+		target.addEventListener(eventType, resolver);
 	});
 }
 
