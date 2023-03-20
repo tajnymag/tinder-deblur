@@ -11,6 +11,8 @@
 
 var cache = [];
 var photoIntervals = [];
+const cache = new Set();
+const photoIntervals = new Set();
 
 /**
  * Core logic of the script
@@ -29,34 +31,34 @@ async function unblur() {
 		if (teaserImage.includes('images-ssl')) {
 			const userId = teaserImage.slice(32, 56);
 
-			if(cache.includes(userId))
-				continue;
+			if (cache.has(userId)) continue;
 
 			try {
 				const user = await fetchUser(userId);
 
-				if(!(user)) {
+				if (!user) {
 					console.debug(`Could not load user '${userId}'`);
 					continue;
 				}
 
-				cache.push(userId);
+				cache.add(userId);
 
 				// log user info + photos
 				console.debug(`${user.name} (${user.bio})`);
 
-				let photos = [];
-
-				for(let photo of user.photos) {
-					let photoUrl = photo.url;
-
-					photos.push(photoUrl);
-
-					console.debug(photoUrl);
+				const photos = [];
+				for (let photo of user.photos) {
+					photos.push(photo.url);
 				}
 
 				// update info container
-				let infoContainer = teaserEl.parentNode.lastChild;
+				const infoContainer = teaserEl.parentNode?.lastElementChild;
+
+				if (!infoContainer) {
+					console.debug(`Could not find info container for '${userId}'`);
+					continue;
+				}
+
 				infoContainer.outerHTML = `
 					<div class="Pos(a) Start(0) End(0) TranslateZ(0) Pe(n) H(30%) B(0)" style="background-image: linear-gradient(to top, rgb(0, 0, 0) 0%, rgba(255, 255, 255, 0) 100%);"></div>
 						<div style="opacity: 0; transition: opacity 0.5s ease-out;" class="like-user-info Pos(a) D(f) Jc(sb) C($c-ds-text-primary-overlay) Ta(start) W(100%) Ai(fe) B(0) P(8px)--xs P(16px) P(20px)--l Cur(p) focus-button-style" tabindex="0">
@@ -67,7 +69,12 @@ async function unblur() {
 											<span class="Typs(display-2-strong)" itemprop="name">${user.name}</span>
 										</div>
 										<span class="As(b) Pend(8px)"></span>
-										<span class="As(b)" itemprop="age">${user.birth_date ? (new Date().getFullYear() - new Date(Date.parse(user.birth_date)).getFullYear()) : ""}</span>
+										<span class="As(b)" itemprop="age">${
+											user.birth_date
+												? new Date().getFullYear() -
+												  new Date(Date.parse(user.birth_date)).getFullYear()
+												: ''
+										}</span>
 									</div>
 								</div>
 							<div class="Animn($anim-slide-in-left) Animdur($fast)">
@@ -80,20 +87,33 @@ async function unblur() {
 				// switch images automatically
 				let currentPhotoIndex = 0;
 
-				photoIntervals.push(setInterval(() => {
-					teaserEl.style.backgroundImage = `url(${photos[currentPhotoIndex % photos.length]})`;
-					currentPhotoIndex++;
-				}, 2_500));
-			} catch(ignore) {
-			}
+				photoIntervals.add(
+					setInterval(() => {
+						teaserEl.style.backgroundImage = `url(${photos[currentPhotoIndex % photos.length]})`;
+						currentPhotoIndex++;
+					}, 2_500)
+				);
+			} catch (ignore) {}
 		}
 	}
 
 	// update user infos
 	setTimeout(() => {
-		for(let infoContainer of document.querySelectorAll(".like-user-info")) {
-			infoContainer.querySelector(".like-user-name").style.transform = `translateY(-${infoContainer.querySelector(".like-user-bio").getBoundingClientRect().height + 20}px)`;
-			infoContainer.style.opacity = 1;
+		/** @type {NodeListOf<HTMLElement>} */
+		const infoContainerEls = document.querySelectorAll('.like-user-info');
+
+		for (let infoContainerEl of infoContainerEls) {
+			/** @type {HTMLElement | null} */
+			const userNameEl = infoContainerEl.querySelector('.like-user-name');
+			/** @type {HTMLElement | null} */
+			const userBioEl = infoContainerEl.querySelector('.like-user-bio');
+
+			if (!userNameEl || !userBioEl) continue;
+
+			const userBioElHeight = userBioEl.getBoundingClientRect().height;
+
+			userNameEl.style.transform = `translateY(-${userBioElHeight + 20}px)`;
+			infoContainerEl.style.opacity = `1`;
 		}
 	}, 2_500);
 }
@@ -188,10 +208,11 @@ async function main() {
 			console.debug('[TINDER DEBLUR]: Deblurring likes');
 			unblur();
 		} else {
-			cache.splice(0, cache.length);
-			
-			for(var intervalId of photoIntervals) {
+			cache.clear();
+
+			for (const intervalId of photoIntervals) {
 				clearInterval(intervalId);
+				photoIntervals.delete(intervalId);
 			}
 		}
 	};
