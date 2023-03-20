@@ -13,8 +13,106 @@
 // @ts-check
 // @filename: types/tampermonkey.d.ts
 
-const cache = new Set();
-const photoIntervals = new Set();
+class UserCacheItem {
+	/**
+	 * @param {string} userId
+	 * @param {object} user
+	 */
+	constructor(userId, user) {
+		this.userId = userId;
+		this.user = user;
+
+		this.updater = null;
+		this.photoIndex = 0;
+	}
+
+	/**
+	 * @returns {string}
+	 */
+	getNextPhoto() {
+		this.photoIndex = (this.photoIndex + 1) % this.user.photos.length;
+		return this.user.photos[this.photoIndex].url;
+	}
+
+	/**
+	 * @returns {number}
+	 */
+	getAge() {
+		if (!this.user.birth_date) return 0;
+
+		const currentYear = new Date().getFullYear();
+		const birthDate = Date.parse(this.user.birth_date);
+		const birthYear = new Date(birthDate).getFullYear();
+
+		return currentYear - birthYear;
+	}
+
+	/** @param {number} interval */
+	setUpdater(interval) {
+		this.clearUpdater();
+		this.interval = interval;
+	}
+
+	clearUpdater() {
+		if (!this.updater) return;
+		clearInterval(this.updater);
+	}
+}
+
+class UserCache {
+	constructor() {
+		/** @type {Map<string, UserCacheItem>} */
+		this.cache = new Map();
+	}
+
+	/**
+	 * @param {string} userId
+	 * @param {object} user
+	 */
+	add(userId, user) {
+		this.delete(userId);
+		this.cache.set(userId, new UserCacheItem(userId, user));
+	}
+
+	/**
+	 * @param {string} userId
+	 */
+	has(userId) {
+		return this.cache.has(userId);
+	}
+
+	/**
+	 * @param {string} userId
+	 * @returns object | undefined
+	 */
+	get(userId) {
+		return this.cache.get(userId)?.user;
+	}
+
+	/**
+	 * @param {string} userId
+	 */
+	delete(userId) {
+		const existingUser = this.cache.get(userId);
+
+		if (!existingUser) return;
+
+		existingUser.clearUpdater();
+		this.cache.delete(userId);
+	}
+
+	clear() {
+		for (const userItem of this.cache.values()) {
+			userItem.clearUpdater();
+			this.cache.delete(userItem.userId);
+		}
+	}
+}
+
+/**
+ * Holds a persistent cache of fetched users and intervals for updating their photos
+ */
+const cache = new UserCache();
 
 /**
  * Core logic of the script
@@ -40,25 +138,22 @@ async function unblur() {
 				const user = await fetchUser(userId);
 
 				if (!user) {
-					console.debug(`Could not load user '${userId}'`);
+					console.error(`Could not load user '${userId}'`);
 					continue;
 				}
 
-				cache.add(userId);
+				// save user to cache
+				cache.add(userId, user);
+				const userItem = cache.get(userId);
 
 				// log user info + photos
 				console.debug(`${user.name} (${user.bio})`);
-
-				const photos = [];
-				for (let photo of user.photos) {
-					photos.push(photo.url);
-				}
 
 				// update info container
 				const infoContainer = teaserEl.parentNode?.lastElementChild;
 
 				if (!infoContainer) {
-					console.debug(`Could not find info container for '${userId}'`);
+					console.error(`Could not find info container for '${userId}'`);
 					continue;
 				}
 
@@ -72,12 +167,7 @@ async function unblur() {
 											<span class="Typs(display-2-strong)" itemprop="name">${user.name}</span>
 										</div>
 										<span class="As(b) Pend(8px)"></span>
-										<span class="As(b)" itemprop="age">${
-											user.birth_date
-												? new Date().getFullYear() -
-												  new Date(Date.parse(user.birth_date)).getFullYear()
-												: ''
-										}</span>
+										<span class="As(b)" itemprop="age">${userItem.getAge()}</span>
 									</div>
 								</div>
 							<div class="Animn($anim-slide-in-left) Animdur($fast)">
@@ -88,15 +178,15 @@ async function unblur() {
 				`;
 
 				// switch images automatically
-				let currentPhotoIndex = 0;
-
-				photoIntervals.add(
+				userItem.setUpdater(
 					setInterval(() => {
-						teaserEl.style.backgroundImage = `url(${photos[currentPhotoIndex % photos.length]})`;
-						currentPhotoIndex++;
+						teaserEl.style.backgroundImage = `url(${userItem.getNextPhoto()})`;
 					}, 2_500)
 				);
-			} catch (ignore) {}
+			} catch (err) {
+				console.error(`Failed to load user '${userId}'`);
+				console.error(err);
+			}
 		}
 	}
 
@@ -133,8 +223,7 @@ async function fetchTeasers() {
 		},
 	})
 		.then((res) => res.json())
-		.then((res) => res.data.results)
-		.catch((ignore) => {});
+		.then((res) => res.data.results);
 }
 
 /**
@@ -150,8 +239,7 @@ async function fetchUser(id) {
 		},
 	})
 		.then((res) => res.json())
-		.then((res) => res.results)
-		.catch((ignore) => {});
+		.then((res) => res.results);
 }
 
 /**
@@ -212,12 +300,8 @@ async function main() {
 			console.debug('[TINDER DEBLUR]: Deblurring likes');
 			unblur();
 		} else {
+			// clear the cache when not on likes page anymore
 			cache.clear();
-
-			for (const intervalId of photoIntervals) {
-				clearInterval(intervalId);
-				photoIntervals.delete(intervalId);
-			}
 		}
 	};
 
