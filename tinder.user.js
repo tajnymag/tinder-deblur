@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://tinder.com/*
 // @grant       none
-// @version     4.0a
+// @version     4.0b
 // @author      Tajnymag
 // @downloadURL https://raw.githubusercontent.com/tajnymag/tinder-deblur/main/tinder.user.js
 // @description Simple script using the official Tinder API to get clean photos of the users who liked you
@@ -586,6 +586,15 @@ async function main() {
 
 	const pageCheckCallback = () => {
 		if (['/app/likes-you', '/app/gold-home'].includes(location.pathname)) {
+			console.debug('[TINDER DEBLUR]: Removing Tinder Gold ads')
+			removeGoldAds();
+
+			console.debug('[TINDER DEBLUR]: Updating user infos')
+			updateUserInfos();
+
+			console.debug('[TINDER DEBLUR]: Checking filters')
+			updateUserFiltering();
+
 			console.debug('[TINDER DEBLUR]: Deblurring likes');
 			unblur();
 		} else {
