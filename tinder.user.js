@@ -354,7 +354,7 @@ function updateUserInfos() {
 				likeEl.addEventListener(
 					'click',
 					(event) => {
-						let currentParent = /** @type {HTMLElement | null} */(event.target);
+						let currentParent = /** @type {HTMLElement | null} */ (event.target);
 
 						if (!currentParent) return;
 
@@ -586,13 +586,13 @@ async function main() {
 
 	const pageCheckCallback = () => {
 		if (['/app/likes-you', '/app/gold-home'].includes(location.pathname)) {
-			console.debug('[TINDER DEBLUR]: Removing Tinder Gold ads')
+			console.debug('[TINDER DEBLUR]: Removing Tinder Gold ads');
 			removeGoldAds();
 
-			console.debug('[TINDER DEBLUR]: Updating user infos')
+			console.debug('[TINDER DEBLUR]: Updating user infos');
 			updateUserInfos();
 
-			console.debug('[TINDER DEBLUR]: Checking filters')
+			console.debug('[TINDER DEBLUR]: Checking filters');
 			updateUserFiltering();
 
 			console.debug('[TINDER DEBLUR]: Deblurring likes');
