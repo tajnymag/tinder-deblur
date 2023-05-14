@@ -398,7 +398,7 @@ function updateUserInfos() {
 		photoSelectorContainer.style.top = '5px';
 		likeEl.appendChild(photoSelectorContainer);
 
-		for (var i = 0; i < user.photos.length; i++) {
+		for (let i = 0; i < user.photos.length; i++) {
 			const photo = user.photos[i];
 			const photoButton = document.createElement('button');
 			photoButton.setAttribute('class', 'like-action-button like-action-photo bullet D(ib) Va(m) Cnt($blank)::a D(b)::a Cur(p) H(4px)::a W(100%)::a Py(4px) Px(2px) W(100%) Bdrs(100px)::a focus-background-style ' + (i == 0 ? 'Bgc($c-ds-background-tappy-indicator-active)::a bullet--active' : 'Bgc($c-ds-background-tappy-indicator-inactive)::a'));
@@ -522,7 +522,7 @@ function updateUserFiltering() {
 						applyContainer.className = '';
 						applyContainer.setAttribute('style', 'align-items: center; display: flex; flex-shrink: 0; font-size: 20px; height: 50px; justify-content: center; width: 100%;');
 
-						var applyButtonEl = document.createElement('button');
+						const applyButtonEl = document.createElement('button');
 						applyButtonEl.innerText = 'Apply';
 						applyButtonEl.style.textTransform = 'uppercase';
 						applyButtonEl.style.fontWeight = '600';
@@ -541,12 +541,12 @@ function updateUserFiltering() {
 
 								if (!maxDistanceElement) return;
 
-								var maxDistance = Math.floor((maxDistanceElement.clientWidth / (maxDistanceElement.parentElement?.clientWidth ?? 1)) * (161 - 2) + 2);
+								const maxDistance = Math.floor((maxDistanceElement.clientWidth / (maxDistanceElement.parentElement?.clientWidth ?? 1)) * (161 - 2) + 2);
 
 								if (maxDistance == 161) maxDistance = Number.MAX_SAFE_INTEGER;
 
 								// age range
-								var ageRangeElement = dialogMenuItemContents[1].querySelector('div[style]');
+								const ageRangeElement = dialogMenuItemContents[1].querySelector('div[style]');
 
 								if (!ageRangeElement) return;
 
@@ -556,7 +556,7 @@ function updateUserFiltering() {
 								if (ageRangeEnd == 100) ageRangeEnd = Number.MAX_SAFE_INTEGER;
 
 								// minimum photos amount
-								var minimumPhotosAmount = 0;
+								let minimumPhotosAmount = 0;
 
 								/** @type {NodeListOf<HTMLDivElement>} */
 								const photosOptions = dialogMenuItemContents[2].querySelectorAll('div[role="option"]');
@@ -569,7 +569,7 @@ function updateUserFiltering() {
 								}
 
 								// interests
-								var interests = [];
+								const interests = [];
 
 								/** @type {NodeListOf<HTMLDivElement>} */
 								const interestOptions = dialogMenuItemContents[3].querySelectorAll('div[role="option"]');
@@ -582,10 +582,10 @@ function updateUserFiltering() {
 								const dialogMenuSelects = document.querySelectorAll('div[role="dialog"] > .menuItem > .menuItem__contents .menuItem__select input');
 
 								// verified
-								var verifiedRequired = dialogMenuSelects[0].checked;
+								const verifiedRequired = dialogMenuSelects[0].checked;
 
 								// has bio
-								var bioRequired = dialogMenuSelects[1].checked;
+								const bioRequired = dialogMenuSelects[1].checked;
 
 								// apply filter
 								/** @type {NodeListOf<HTMLDivElement>} */
@@ -601,7 +601,7 @@ function updateUserFiltering() {
 									const user = userItem.user;
 									const userInterests = Array.from(user.user_interests ?? []).map((interest) => interest.name);
 
-									var matches = true;
+									let matches = true;
 
 									// check radius
 									if (!user.hide_distance && user.distance_mi > maxDistance) matches = false;
