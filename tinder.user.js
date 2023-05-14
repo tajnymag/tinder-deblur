@@ -537,7 +537,7 @@ function updateUserFiltering() {
 								const dialogMenuItemContents = document.querySelectorAll('div[role="dialog"] > .menuItem > .menuItem__contents > div:nth-of-type(2)');
 
 								// max distance
-								var maxDistanceElement = dialogMenuItemContents[0].querySelector('div[style]');
+								const maxDistanceElement = dialogMenuItemContents[0].querySelector('div[style]');
 
 								if (!maxDistanceElement) return;
 
@@ -550,8 +550,8 @@ function updateUserFiltering() {
 
 								if (!ageRangeElement) return;
 
-								var ageRangeStart = Math.round((parseFloat(getComputedStyle(ageRangeElement).left.replace('px', '')) / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18) + 18);
-								var ageRangeEnd = ageRangeStart + Math.round((ageRangeElement.clientWidth / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18));
+								const ageRangeStart = Math.round((parseFloat(getComputedStyle(ageRangeElement).left.replace('px', '')) / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18) + 18);
+								const ageRangeEnd = ageRangeStart + Math.round((ageRangeElement.clientWidth / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18));
 
 								if (ageRangeEnd == 100) ageRangeEnd = Number.MAX_SAFE_INTEGER;
 
