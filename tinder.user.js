@@ -149,11 +149,30 @@ async function unblur() {
 		const teaserEl = teaserEls[i];
 		const teaserImage = teaser.user.photos[0].url;
 
-		if (teaserEl == null) continue;
+		if (!teaserEl) continue;
+
+		const likeEl = teaserEl.parentElement?.parentElement;
+
+		if (!likeEl) continue;
 
 		if (teaserImage.includes('unknown') || !teaserImage.includes('images-ssl')) {
-			teaserEl.remove();
+			if(likeEl.dataset.errorText)
+				continue;
+
+			likeEl.dataset.errorText = 'true';
+			likeEl.firstChild.style.opacity = '0.5';
+			likeEl.innerHTML += `
+				<div class="error-text" style="position: absolute; display: flex; justify-content: center; top: 5px; left: 5px; width: calc(100% - 5px * 2);">
+					<p style="text-align: center; background-color: #0008; padding: 4px 12px; border-radius: 12.5px; color: #ac0c04; text-transform: uppercase; font-size: 14px;">Invalid</p>
+				</div>
+			`;
 			continue;
+		}
+
+		if (likeEl.dataset.errorText) {
+			likeEl.dataset.removeProperty("errorText");
+			likeEl.querySelector(".error-text").remove();
+			likeEl.firstChild.opacity = 1;
 		}
 
 		const userId = teaserImage.slice(32, 56);
@@ -161,10 +180,6 @@ async function unblur() {
 		if (cache.has(userId)) continue;
 
 		try {
-			const likeEl = teaserEl.parentElement?.parentElement;
-
-			if (!likeEl) continue;
-
 			if (likeEl.dataset.userId) continue;
 
 			likeEl.style.opacity = '0';
@@ -551,7 +566,7 @@ function updateUserFiltering() {
 								if (!ageRangeElement) return;
 
 								const ageRangeStart = Math.round((parseFloat(getComputedStyle(ageRangeElement).left.replace('px', '')) / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18) + 18);
-								const ageRangeEnd = ageRangeStart + Math.round((ageRangeElement.clientWidth / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18));
+								let ageRangeEnd = ageRangeStart + Math.round((ageRangeElement.clientWidth / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18));
 
 								if (ageRangeEnd == 100) ageRangeEnd = Number.MAX_SAFE_INTEGER;
 
