@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://tinder.com/*
 // @grant       none
-// @version     4.1
+// @version     4.2a
 // @author      Tajnymag
 // @downloadURL https://raw.githubusercontent.com/tajnymag/tinder-deblur/main/tinder.user.js
 // @description Simple script using the official Tinder API to get clean photos of the users who liked you
@@ -134,6 +134,33 @@ const cache = new UserCache();
  * Original function of the script
  */
 async function unblur() {
+	/** @type {HTMLElement | null} */
+	const likesGridContainerEl = document.querySelector('main div.Expand > div[role="grid"]');
+
+	if (!likesGridContainerEl) return;
+
+	if (!likesGridContainerEl.dataset.loadingTextAdded) {
+		likesGridContainerEl.dataset.loadingTextAdded = 'true';
+
+		likesGridContainerEl.style.position = 'relative';
+
+		const loadingContainer = document.createElement('DIV');
+		loadingContainer.classList.add('loading-container');
+		loadingContainer.setAttribute(
+			'style',
+			'align-items: center; background-color: black; display: flex; height: 100%; justify-content: center; left: 0; position: absolute; text-align: center; top: 0; width: 100%; z-index: 50;'
+		);
+		likesGridContainerEl.insertBefore(loadingContainer, likesGridContainerEl.firstChild);
+
+		const loadingText = document.createElement('H4');
+		loadingText.setAttribute(
+			'style',
+			'color: #d2d2d3; font-size: 40px; letter-spacing: 2px; text-transform: uppercase;'
+		);
+		loadingText.innerText = 'Loading';
+		loadingContainer.appendChild(loadingText);
+	}
+
 	const [failedToFetchTeasersError, teasers] = await safeAwait(fetchTeasers());
 
 	if (failedToFetchTeasersError) {
@@ -155,24 +182,30 @@ async function unblur() {
 
 		if (!likeEl) continue;
 
-		if (teaserImage.includes('unknown') || !teaserImage.includes('images-ssl')) {
-			if(likeEl.dataset.errorText)
-				continue;
+		if (!likeEl.classList.contains('like')) likeEl.classList.add('like');
 
-			likeEl.dataset.errorText = 'true';
-			likeEl.firstChild.style.opacity = '0.5';
+		const likeElContent = likeEl.querySelector('.enterAnimationContainer.Expand');
+
+		if (!likeElContent) continue;
+
+		if (teaserImage.includes('unknown') || !teaserImage.includes('images-ssl')) {
+			if (likeEl.dataset.invalid) continue;
+
+			likeEl.dataset.invalid = 'true';
+			likeElContent.style.opacity = '0.5';
 			likeEl.innerHTML += `
-				<div class="error-text" style="position: absolute; display: flex; justify-content: center; top: 5px; left: 5px; width: calc(100% - 5px * 2);">
-					<p style="text-align: center; background-color: #0008; padding: 4px 12px; border-radius: 12.5px; color: #ac0c04; text-transform: uppercase; font-size: 14px;">Invalid</p>
+				<div class="invalid-text" style="display: flex; justify-content: center; left: 5px; top: 5px; position: absolute; width: calc(100% - 5px * 2);">
+					<p style="background-color: #0008; border-radius: 12.5px; color: #ac0c04; font-size: 14px; padding: 4px 12px; text-align: center; text-transform: uppercase;">Invalid</p>
 				</div>
 			`;
 			continue;
 		}
 
-		if (likeEl.dataset.errorText) {
-			likeEl.dataset.removeProperty("errorText");
-			likeEl.querySelector(".error-text").remove();
-			likeEl.firstChild.opacity = 1;
+		if (likeEl.dataset.invalid) {
+			delete likeEl.dataset.invalid;
+
+			likeEl.querySelector('.invalid-text').remove();
+			likeElContent.style.opacity = '1';
 		}
 
 		const userId = teaserImage.slice(32, 56);
@@ -181,8 +214,6 @@ async function unblur() {
 
 		try {
 			if (likeEl.dataset.userId) continue;
-
-			likeEl.style.opacity = '0';
 
 			fetchUser(userId).then((user) => {
 				if (!user) {
@@ -205,7 +236,7 @@ async function unblur() {
 
 				// hide the like if it was passed before
 				if (userItem.isHidden()) {
-					teaserEl.parentNode?.parentElement?.remove();
+					likeEl.remove();
 					return;
 				}
 
@@ -233,17 +264,19 @@ async function unblur() {
 							<div class="D(ib) Va(t)">
 							<svg focusable="false" aria-hidden="true" role="presentation" viewBox="0 0 24 24" width="24px" height="24px" class="Va(m) Sq(16px)">
 								<g fill="#fff" stroke="#fff" stroke-width=".5" fill-rule="evenodd">
-								<path d="M11.436 21.17l-.185-.165a35.36 35.36 0 0 1-3.615-3.801C5.222 14.244 4 11.658 4 9.524 4 5.305 7.267 2 11.436 2c4.168 0 7.437 3.305 7.437 7.524 0 4.903-6.953 11.214-7.237 11.48l-.2.167zm0-18.683c-3.869 0-6.9 3.091-6.9 7.037 0 4.401 5.771 9.927 6.897 10.972 1.12-1.054 6.902-6.694 6.902-10.95.001-3.968-3.03-7.059-6.9-7.059h.001z" />
-								<path d="M11.445 12.5a2.945 2.945 0 0 1-2.721-1.855 3.04 3.04 0 0 1 .641-3.269 2.905 2.905 0 0 1 3.213-.645 3.003 3.003 0 0 1 1.813 2.776c-.006 1.653-1.322 2.991-2.946 2.993zm0-5.544c-1.378 0-2.496 1.139-2.498 2.542 0 1.404 1.115 2.544 2.495 2.546a2.52 2.52 0 0 0 2.502-2.535 2.527 2.527 0 0 0-2.499-2.545v-.008z" />
+									<path d="M11.436 21.17l-.185-.165a35.36 35.36 0 0 1-3.615-3.801C5.222 14.244 4 11.658 4 9.524 4 5.305 7.267 2 11.436 2c4.168 0 7.437 3.305 7.437 7.524 0 4.903-6.953 11.214-7.237 11.48l-.2.167zm0-18.683c-3.869 0-6.9 3.091-6.9 7.037 0 4.401 5.771 9.927 6.897 10.972 1.12-1.054 6.902-6.694 6.902-10.95.001-3.968-3.03-7.059-6.9-7.059h.001z" />
+									<path d="M11.445 12.5a2.945 2.945 0 0 1-2.721-1.855 3.04 3.04 0 0 1 .641-3.269 2.905 2.905 0 0 1 3.213-.645 3.003 3.003 0 0 1 1.813 2.776c-.006 1.653-1.322 2.991-2.946 2.993zm0-5.544c-1.378 0-2.496 1.139-2.498 2.542 0 1.404 1.115 2.544 2.495 2.546a2.52 2.52 0 0 0 2.502-2.535 2.527 2.527 0 0 0-2.499-2.545v-.008z" />
 								</g>
 							</svg>
 							</div>
-							<div class="Us(t) Va(m) D(ib) NetWidth(100%,24px) C($c-ds-text-primary-overlay) Ell">
+							<div class="Us(t) Va(m) D(ib) NetWidth(100%,24px) C($c-ds-text-secondary-overlay) Ell">
 							${user.distance_mi} miles away
 							</div>
 						</div>
 						<!-- Bio -->
-						<span class='like-user-bio' style='-webkit-box-orient: vertical; display: -webkit-box; -webkit-line-clamp: 3; max-height: 63px; overflow-y: hidden; text-overflow: ellipsis; transform: translateY(-20px);'>${user.bio}</span>
+						<span class='like-user-bio' style='-webkit-box-orient: vertical; display: -webkit-box; -webkit-line-clamp: 3; max-height: 63px; overflow-y: hidden; text-overflow: ellipsis; transform: translateY(-20px);'>${
+							user.bio
+						}</span>
 						</div>
 						</div>
 					</div>
@@ -279,9 +312,7 @@ function removeGoldAds() {
 	for (const advertisementEl of document.getElementsByTagName('div')) {
 		if (advertisementEl.children.length > 0) continue;
 
-		if (advertisementEl.innerText.toLowerCase().includes('gold')) {
-			advertisementEl.remove();
-		}
+		if (advertisementEl.innerText.toLowerCase().includes('gold')) advertisementEl.remove();
 	}
 
 	// remove gold button
@@ -309,8 +340,6 @@ function updateUserInfos() {
 	// update the likes grid
 	const likesGridEl = likesGridContainerEl.lastElementChild;
 
-	if (!(likesGridEl instanceof HTMLElement)) return;
-
 	if (!likesGridEl.dataset.stylesUpdated) {
 		likesGridEl.dataset.stylesUpdated = 'true';
 		likesGridEl.classList.add('D(f)');
@@ -323,9 +352,16 @@ function updateUserInfos() {
 
 	// update the like elements
 	for (const likeEl of likesGridEl.children) {
-		if (!(likeEl instanceof HTMLElement)) {
-			continue;
-		}
+		// classes
+		likeEl.classList.remove('Cur(p)');
+
+		// styles
+		likeEl.style.removeProperty('transform');
+		likeEl.style.position = 'relative';
+		likeEl.style.backgroundColor = 'black';
+		likeEl.style.borderRadius = '8px';
+		likeEl.style.marginTop = '0';
+		likeEl.style.marginBottom = '0';
 
 		/** @type {HTMLElement | null} */
 		const infoContainerEl = likeEl.querySelector('.like-user-info');
@@ -363,22 +399,13 @@ function updateUserInfos() {
 
 		likeEl.dataset.infoSet = 'true';
 
-		// classes
-		likeEl.classList.remove('Cur(p)');
-
-		// styles
-		likeEl.style.removeProperty('transform');
-		likeEl.style.position = 'relative';
-		likeEl.style.backgroundColor = 'black';
-		likeEl.style.borderRadius = '8px';
-		likeEl.style.marginTop = '0';
-		likeEl.style.marginBottom = '0';
-
 		// update info container
 
 		const userBioElHeight = userBioEl.getBoundingClientRect().height;
 
-		userNameEl.style.transform = `translateY(-${userBioElHeight + 20 /* distance height */ + 20 /* name height */ + 20 /* action buttons */}px)`;
+		userNameEl.style.transform = `translateY(-${
+			userBioElHeight + 20 /* distance height */ + 20 /* name height */ + 20 /* action buttons */
+		}px)`;
 		infoContainerEl.style.opacity = `1`;
 
 		// add action buttons
@@ -409,14 +436,22 @@ function updateUserInfos() {
 
 		// add photo selector
 		const photoSelectorContainer = document.createElement('div');
-		photoSelectorContainer.setAttribute('class', 'photo-selectors CenterAlign D(f) Fxd(r) W(100%) Px(8px) Pos(a) Iso(i)');
+		photoSelectorContainer.setAttribute(
+			'class',
+			'photo-selectors CenterAlign D(f) Fxd(r) W(100%) Px(8px) Pos(a) Iso(i)'
+		);
 		photoSelectorContainer.style.top = '5px';
 		likeEl.appendChild(photoSelectorContainer);
 
 		for (let i = 0; i < user.photos.length; i++) {
-			const photo = user.photos[i];
 			const photoButton = document.createElement('button');
-			photoButton.setAttribute('class', 'like-action-button like-action-photo bullet D(ib) Va(m) Cnt($blank)::a D(b)::a Cur(p) H(4px)::a W(100%)::a Py(4px) Px(2px) W(100%) Bdrs(100px)::a focus-background-style ' + (i == 0 ? 'Bgc($c-ds-background-tappy-indicator-active)::a bullet--active' : 'Bgc($c-ds-background-tappy-indicator-inactive)::a'));
+			photoButton.setAttribute(
+				'class',
+				'like-action-button like-action-photo bullet D(ib) Va(m) Cnt($blank)::a D(b)::a Cur(p) H(4px)::a W(100%)::a Py(4px) Px(2px) W(100%) Bdrs(100px)::a focus-background-style ' +
+					(i == 0
+						? 'Bgc($c-ds-background-tappy-indicator-active)::a bullet--active'
+						: 'Bgc($c-ds-background-tappy-indicator-inactive)::a')
+			);
 			photoButton.dataset.photoIndex = i.toString();
 			photoSelectorContainer.appendChild(photoButton);
 		}
@@ -425,8 +460,6 @@ function updateUserInfos() {
 		likeEl.addEventListener(
 			'click',
 			(event) => {
-				if (!(event.target instanceof HTMLElement)) return;
-
 				/** @type {HTMLElement | null} */
 				let currentParent = event.target;
 
@@ -452,7 +485,10 @@ function updateUserInfos() {
 						userItem.photoIndex = index;
 					} else if (currentParent.classList.contains('like-action-next-photo')) {
 						const oldIndex = userItem.photoIndex;
-						const photoUrl = event.offsetX < currentParent.clientWidth / 2 ? userItem.getPreviousPhoto() : userItem.getNextPhoto();
+						const photoUrl =
+							event.offsetX < currentParent.clientWidth / 2
+								? userItem.getPreviousPhoto()
+								: userItem.getNextPhoto();
 						showPhoto(likeEl, oldIndex, userItem.photoIndex, photoUrl);
 					}
 
@@ -463,10 +499,55 @@ function updateUserInfos() {
 			},
 			true
 		);
+	}
 
-		// like element is now complete
-		likeEl.style.transition = 'opacity 0.4s ease-out';
-		likeEl.style.opacity = '1';
+	const totalLikesCount = likesGridEl?.childElementCount ?? 0;
+
+	if (totalLikesCount == 0) {
+		if (!likesGridContainerEl.dataset.noLikes) {
+			likesGridContainerEl.dataset.noLikes = 'true';
+
+			if (likesGridContainerEl.dataset.loadingTextAdded)
+				likesGridContainerEl.querySelector('.loading-container')?.remove();
+
+			const noLikesContainer = document.createElement('DIV');
+			noLikesContainer.classList.add('no-likes-container');
+			noLikesContainer.setAttribute(
+				'style',
+				'align-items: center; background-color: black; display: flex; height: 100%; justify-content: center; left: 0; position: absolute; text-align: center; top: 0; width: 100%; z-index: 50;'
+			);
+			likesGridContainerEl.insertBefore(noLikesContainer, likesGridContainerEl.firstChild);
+
+			const noLikesText = document.createElement('H4');
+			noLikesText.setAttribute(
+				'style',
+				'color: #d2d2d3; font-size: 40px; letter-spacing: 2px; text-transform: uppercase;'
+			);
+			noLikesText.innerText = 'No likes available';
+			noLikesContainer.appendChild(noLikesText);
+		}
+	} else if (
+		document.querySelectorAll('div[data-info-set]').length > 0 ||
+		document.querySelectorAll('div[data-invalid]').length == totalLikesCount
+	) {
+		if (!likesGridContainerEl.dataset.loadingComplete) {
+			likesGridContainerEl.dataset.loadingComplete = 'true';
+
+			if (likesGridContainerEl.dataset.noLikes) {
+				delete likesGridContainerEl.dataset.noLikes;
+
+				likesGridContainerEl.querySelector('.no-likes-container')?.remove();
+			}
+
+			const loadingContainer = likesGridContainerEl.querySelector('.loading-container');
+
+			if (!loadingContainer) return;
+
+			loadingContainer.style.transition = 'opacity 0.4s 0.2s ease-out';
+			loadingContainer.style.opacity = '0';
+
+			setTimeout(() => loadingContainer.remove(), 600);
+		}
 	}
 }
 
@@ -523,19 +604,26 @@ function updateUserFiltering() {
 	if (filterButtonEl != null) {
 		if (!filterButtonEl.dataset.eventsInterrupted) {
 			filterButtonEl.dataset.eventsInterrupted = 'true';
-			filterButtonEl.addEventListener('click', (event) => {
+			filterButtonEl.addEventListener('click', () => {
 				setTimeout(() => {
 					// remove "show all" button
-					for (const element of document.querySelectorAll('div[role="dialog"] .menuItem__contents > div > div[role="button"]')) {
+					for (const element of document.querySelectorAll(
+						'div[role="dialog"] .menuItem__contents > div > div[role="button"]'
+					)) {
 						element.remove();
 					}
 
-					const applyContainer = document.querySelector('div[role="dialog"] > div:not(.menuItem):not(.CenterAlign)');
+					const applyContainer = document.querySelector(
+						'div[role="dialog"] > div:not(.menuItem):not(.CenterAlign)'
+					);
 
 					if (applyContainer != null) {
 						applyContainer.innerHTML = '';
 						applyContainer.className = '';
-						applyContainer.setAttribute('style', 'align-items: center; display: flex; flex-shrink: 0; font-size: 20px; height: 50px; justify-content: center; width: 100%;');
+						applyContainer.setAttribute(
+							'style',
+							'align-items: center; display: flex; flex-shrink: 0; font-size: 20px; height: 50px; justify-content: center; width: 100%;'
+						);
 
 						const applyButtonEl = document.createElement('button');
 						applyButtonEl.innerText = 'Apply';
@@ -549,14 +637,21 @@ function updateUserFiltering() {
 							(event) => {
 								event.stopImmediatePropagation();
 
-								const dialogMenuItemContents = document.querySelectorAll('div[role="dialog"] > .menuItem > .menuItem__contents > div:nth-of-type(2)');
+								const dialogMenuItemContents = document.querySelectorAll(
+									'div[role="dialog"] > .menuItem > .menuItem__contents > div:nth-of-type(2)'
+								);
 
 								// max distance
 								const maxDistanceElement = dialogMenuItemContents[0].querySelector('div[style]');
 
 								if (!maxDistanceElement) return;
 
-								const maxDistance = Math.floor((maxDistanceElement.clientWidth / (maxDistanceElement.parentElement?.clientWidth ?? 1)) * (161 - 2) + 2);
+								let maxDistance = Math.floor(
+									(maxDistanceElement.clientWidth /
+										(maxDistanceElement.parentElement?.clientWidth ?? 1)) *
+										(161 - 2) +
+										2
+								);
 
 								if (maxDistance == 161) maxDistance = Number.MAX_SAFE_INTEGER;
 
@@ -565,8 +660,19 @@ function updateUserFiltering() {
 
 								if (!ageRangeElement) return;
 
-								const ageRangeStart = Math.round((parseFloat(getComputedStyle(ageRangeElement).left.replace('px', '')) / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18) + 18);
-								let ageRangeEnd = ageRangeStart + Math.round((ageRangeElement.clientWidth / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18));
+								const ageRangeStart = Math.round(
+									(parseFloat(getComputedStyle(ageRangeElement).left.replace('px', '')) /
+										(ageRangeElement.parentElement?.clientWidth ?? 1)) *
+										(100 - 18) +
+										18
+								);
+								let ageRangeEnd =
+									ageRangeStart +
+									Math.round(
+										(ageRangeElement.clientWidth /
+											(ageRangeElement.parentElement?.clientWidth ?? 1)) *
+											(100 - 18)
+									);
 
 								if (ageRangeEnd == 100) ageRangeEnd = Number.MAX_SAFE_INTEGER;
 
@@ -577,7 +683,11 @@ function updateUserFiltering() {
 								const photosOptions = dialogMenuItemContents[2].querySelectorAll('div[role="option"]');
 
 								for (const minimumPhotosOption of photosOptions) {
-									if (minimumPhotosOption.getAttribute('class')?.includes('c-ds-border-passions-shared')) {
+									if (
+										minimumPhotosOption
+											.getAttribute('class')
+											?.includes('c-ds-border-passions-shared')
+									) {
 										minimumPhotosAmount = parseInt(minimumPhotosOption.innerText);
 										break;
 									}
@@ -587,14 +697,18 @@ function updateUserFiltering() {
 								const interests = [];
 
 								/** @type {NodeListOf<HTMLDivElement>} */
-								const interestOptions = dialogMenuItemContents[3].querySelectorAll('div[role="option"]');
+								const interestOptions =
+									dialogMenuItemContents[3].querySelectorAll('div[role="option"]');
 
 								for (const interestOption of interestOptions) {
-									if (interestOption.getAttribute('class')?.includes('c-ds-border-passions-shared')) interests.push(interestOption.innerText);
+									if (interestOption.getAttribute('class')?.includes('c-ds-border-passions-shared'))
+										interests.push(interestOption.innerText);
 								}
 
 								/** @type {NodeListOf<HTMLInputElement>} */
-								const dialogMenuSelects = document.querySelectorAll('div[role="dialog"] > .menuItem > .menuItem__contents .menuItem__select input');
+								const dialogMenuSelects = document.querySelectorAll(
+									'div[role="dialog"] > .menuItem > .menuItem__contents .menuItem__select input'
+								);
 
 								// verified
 								const verifiedRequired = dialogMenuSelects[0].checked;
@@ -614,14 +728,20 @@ function updateUserFiltering() {
 									if (!userItem) continue;
 
 									const user = userItem.user;
-									const userInterests = Array.from(user.user_interests ?? []).map((interest) => interest.name);
+									const userInterests = Array.from(user.user_interests ?? []).map(
+										(interest) => interest.name
+									);
 
 									let matches = true;
 
 									// check radius
 									if (!user.hide_distance && user.distance_mi > maxDistance) matches = false;
 									// check age range
-									else if (!user.hide_age && (userItem.getAge() < ageRangeStart || userItem.getAge() > ageRangeEnd)) matches = false;
+									else if (
+										!user.hide_age &&
+										(userItem.getAge() < ageRangeStart || userItem.getAge() > ageRangeEnd)
+									)
+										matches = false;
 									// check photos amount
 									else if (user.photos.length < minimumPhotosAmount) matches = false;
 									// check verified
@@ -640,9 +760,10 @@ function updateUserFiltering() {
 
 								// close dialog
 								/** @type {Element | null | undefined} */
-								const applyButton = document.querySelector('div[role="dialog"]')?.parentElement?.firstElementChild;
+								const applyButton =
+									document.querySelector('div[role="dialog"]')?.parentElement?.firstElementChild;
 
-								if (applyButton instanceof HTMLElement) applyButton?.click();
+								applyButton?.click();
 
 								setTimeout(removeGoldAds, 250);
 							},
@@ -675,13 +796,16 @@ function updateUserFiltering() {
  * @param {UserCacheItem} userItem
  */
 async function pass(userItem) {
-	const response = await fetch(`https://api.gotinder.com/pass/${userItem.userId}?s_number=${userItem.user.s_number}`, {
-		headers: {
-			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
-			platform: 'android',
-		},
-		method: 'GET',
-	});
+	const response = await fetch(
+		`https://api.gotinder.com/pass/${userItem.userId}?s_number=${userItem.user.s_number}`,
+		{
+			headers: {
+				'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
+				platform: 'android',
+			},
+			method: 'GET',
+		}
+	);
 
 	hide(userItem);
 }
@@ -796,8 +920,12 @@ async function waitForApp() {
 async function main() {
 	// check if running as a userscript
 	if (typeof GM_info === 'undefined') {
-		console.warn('[TINDER DEBLUR]: The only supported way of running this script is through a userscript management browser addons like Violentmonkey, Tampermonkey or Greasemonkey!');
-		console.warn('[TINDER DEBLUR]: Script was not terminated, but you should really look into the correct way of running it.');
+		console.warn(
+			'[TINDER DEBLUR]: The only supported way of running this script is through a userscript management browser addons like Violentmonkey, Tampermonkey or Greasemonkey!'
+		);
+		console.warn(
+			'[TINDER DEBLUR]: Script was not terminated, but you should really look into the correct way of running it.'
+		);
 	}
 
 	// wait for a full page load
@@ -816,17 +944,17 @@ async function main() {
 
 				console.debug('[TINDER DEBLUR]: Deblurring likes');
 				await unblur();
-
-				console.debug('[TINDER DEBLUR]: Updating user infos');
-				updateUserInfos();
 			}
+
+			console.debug('[TINDER DEBLUR]: Updating user infos');
+			updateUserInfos();
 		} else {
 			// clear the cache when not on likes page anymore
 			cache.clear();
 		}
 
-		// loop based observer (every 5s)
-		setTimeout(pageCheckCallback, 5_000);
+		// loop based observer (every 2.5s)
+		setTimeout(pageCheckCallback, 2_500);
 	};
 
 	pageCheckCallback();
