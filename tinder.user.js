@@ -745,7 +745,7 @@ function updateUserFiltering() {
  * @param {UserCacheItem} userItem
  */
 async function pass(userItem) {
-	const response = await fetch(`https://api.gotinder.com/pass/${userItem.userId}?s_number=${userItem.user.s_number}`, {
+	const response = await fetch(`https://api.gotinder.com/pass/${userItem.userId}?s_number=${userItem.user?.s_number ?? 0}`, {
 		headers: {
 			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
 			platform: 'android',
@@ -771,7 +771,7 @@ async function like(userItem) {
 		body: JSON.stringify({
 			liked_content_id: userItem.user.photos[0].id,
 			liked_content_type: 'photo',
-			s_number: userItem.user.s_number,
+			s_number: userItem.user?.s_number ?? 0,
 		}),
 	});
 
