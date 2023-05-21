@@ -13,9 +13,11 @@ Simple script using the official Tinder API to get clean photos of the users who
 
 ## How does it work
 
-* Initially, Tinder API returned clean profile images on requests that had their headers stripped down.
-* Tinder patched this exploit for the web app. However, they did not patch it for their Android API.
-* Tinder made the user endpoint only accessible to matches, that's why the username, age etc. cannot be seen any more, though the unblur, like and pass functions remain.
+Initially, Tinder API returned clean profile images on requests that had their headers stripped down.
+Tinder patched this exploit for the web app. However, they did not patch it for their Android API.
+Recently, Tinder made the user endpoint only accessible to matches, that's why the username, age etc. cannot be seen any more, though the unblur, like and pass functions remain.
+
+**Be prepared** for this exploit to be patched sooner or later.
 
 ## Contributors
 
