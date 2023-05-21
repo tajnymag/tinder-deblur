@@ -27,9 +27,11 @@ class UserCacheItem {
 	}
 
 	/**
-	 * @returns {string}
+	 * @returns {string | null}
 	 */
 	getPreviousPhoto() {
+		if (!this.user) return null;
+
 		this.photoIndex = this.photoIndex - 1;
 
 		if (this.photoIndex < 0) this.photoIndex = this.user.photos.length - 1;
@@ -38,9 +40,11 @@ class UserCacheItem {
 	}
 
 	/**
-	 * @returns {string}
+	 * @returns {string | null}
 	 */
 	getNextPhoto() {
+		if (!this.user) return null;
+
 		this.photoIndex = (this.photoIndex + 1) % this.user.photos.length;
 
 		return this.user.photos[this.photoIndex].url;
@@ -50,13 +54,24 @@ class UserCacheItem {
 	 * @returns {number}
 	 */
 	getAge() {
-		if (!this.user.birth_date) return 0;
+		if (!this.user || !this.user.birth_date) return 0;
 
-		const currentYear = new Date().getFullYear();
+		const currentDate = new Date();
 		const birthDate = Date.parse(this.user.birth_date);
-		const birthYear = new Date(birthDate).getFullYear();
 
-		return currentYear - birthYear;
+		const currentYear = currentDate.getFullYear();
+		const currentMonth = currentDate.getMonth();
+		const currentDay = currentDate.getDay();
+		const birthYear = birthDate.getFullYear();
+		const birthMonth = birthDate.getMonth();
+		const birthDay = birthDate.getDay();
+
+		let age = currentYear - birthYear;
+
+		if (currentMonth < birthMonth) age--;
+		else if (currentDay < birthDay) age--;
+
+		return age;
 	}
 
 	/**
@@ -146,17 +161,11 @@ async function unblur() {
 
 		const loadingContainer = document.createElement('DIV');
 		loadingContainer.classList.add('loading-container');
-		loadingContainer.setAttribute(
-			'style',
-			'align-items: center; background-color: black; display: flex; height: 100%; justify-content: center; left: 0; position: absolute; text-align: center; top: 0; width: 100%; z-index: 50;'
-		);
+		loadingContainer.setAttribute('style', 'align-items: center; background-color: black; display: flex; height: 100%; justify-content: center; left: 0; position: absolute; text-align: center; top: 0; width: 100%; z-index: 50;');
 		likesGridContainerEl.insertBefore(loadingContainer, likesGridContainerEl.firstChild);
 
 		const loadingText = document.createElement('H4');
-		loadingText.setAttribute(
-			'style',
-			'color: #d2d2d3; font-size: 40px; letter-spacing: 2px; text-transform: uppercase;'
-		);
+		loadingText.setAttribute('style', 'color: #d2d2d3; font-size: 40px; letter-spacing: 2px; text-transform: uppercase;');
 		loadingText.innerText = 'Loading';
 		loadingContainer.appendChild(loadingText);
 	}
@@ -172,9 +181,9 @@ async function unblur() {
 	const teaserEls = document.querySelectorAll('.Expand.enterAnimationContainer > div:nth-child(1)');
 
 	for (let i = 0; i < teaserEls.length; ++i) {
-		const teaser = teasers[i];
+		const teaserUser = teasers[i].user;
 		const teaserEl = teaserEls[i];
-		const teaserImage = teaser.user.photos[0].url;
+		const teaserImage = teaserUser.photos[0].url;
 
 		if (!teaserEl) continue;
 
@@ -213,26 +222,34 @@ async function unblur() {
 		if (cache.has(userId)) continue;
 
 		try {
+			// only update teaser once
 			if (likeEl.dataset.userId) continue;
 
+			const infoContainerEl = teaserEl.parentElement?.lastElementChild;
+
+			if (!infoContainerEl) {
+				console.error(`Could not find info container for '${userId}'`);
+				return;
+			}
+
+			infoContainerEl.outerHTML = `
+				<div class='Pos(a) Start(0) End(0) TranslateZ(0) Pe(n) B(0)' style='background-image: linear-gradient(to top, #000F 0%, #0000 100%); height: 65%;'>
+					<div style='opacity: 0; transition: opacity 0.5s ease-out;' class='like-user-info Pos(a) D(f) Jc(sb) C($c-ds-text-primary-overlay) Ta(start) W(100%) Ai(fe) B(0) P(8px)--xs P(16px) P(20px)--l Cur(p) focus-button-style' tabindex='0'>
+						<div class='Tsh($tsh-s) D(f) Fx($flx1) Fxd(c) Miw(0)'></div>
+					</div>
+				</div>
+			`;
+
+			likeEl.classList.add('like-item');
+			likeEl.dataset.userId = userId;
+
+			teaserEl.id = 'teaser-' + userId;
+			teaserEl.classList.add('teaser', 'like-action-button', 'like-action-next-photo');
+			teaserEl.style.backgroundSize = 'cover';
+
 			fetchUser(userId).then((user) => {
-				if (!user) {
-					console.error(`Could not load user '${userId}'`);
-					return;
-				}
-
-				// log user name + bio
-				console.debug(`${user.name} (${user.bio})`);
-
-				const infoContainerEl = teaserEl.parentElement?.lastElementChild;
-
-				if (!infoContainerEl) {
-					console.error(`Could not find info container for '${userId}'`);
-					return;
-				}
-
 				// save user to cache
-				const userItem = cache.add(userId, user);
+				const userItem = cache.add(userId, user ?? null);
 
 				// hide the like if it was passed before
 				if (userItem.isHidden()) {
@@ -240,52 +257,51 @@ async function unblur() {
 					return;
 				}
 
-				likeEl.dataset.userId = userId;
-				likeEl.classList.add('like-item');
+				if (!user) {
+					teaserEl.style.backgroundImage = `url('https://preview.gotinder.com/${teaserUser._id}/original_${teaserUser.photos[0].id}.jpeg')`;
+					infoContainerEl.remove();
 
-				// update info container
-				infoContainerEl.outerHTML = `
-					<div class='Pos(a) Start(0) End(0) TranslateZ(0) Pe(n) B(0)' style='background-image: linear-gradient(to top, #000F 0%, #0000 100%); height: 65%;'>
-						<div style='opacity: 0; transition: opacity 0.5s ease-out;' class='like-user-info Pos(a) D(f) Jc(sb) C($c-ds-text-primary-overlay) Ta(start) W(100%) Ai(fe) B(0) P(8px)--xs P(16px) P(20px)--l Cur(p) focus-button-style' tabindex='0'>
-						<div class='Tsh($tsh-s) D(f) Fx($flx1) Fxd(c) Miw(0)'>
-						<div class='Pos(a) Fz($l) B(0) Trsdu($fast) Maw(80%) D(f) Fxd(c) like-user-name'>
-							<div class='D(f) Ai(c) Miw(0)'>
+					console.error(`Could not load user '${userId}'`);
+					return;
+				}
+
+				// log user name + bio
+				console.debug(`${user.name} (${user.bio})`);
+
+				const likeUserInfo = infoContainerEl.querySelector('like-user-info')?.firstChild;
+
+				if (!likeUserInfo) return;
+
+				likeUserInfo.innerHTML = `
+					<div class='Pos(a) Fz($l) B(0) Trsdu($fast) Maw(80%) D(f) Fxd(c) like-user-name'>
+						<div class='D(f) Ai(c) Miw(0)'>
 							<!-- Name -->
 							<div class='Ov(h) Ws(nw) As(b) Ell'>
-							<span class='Typs(display-2-strong)' itemprop='name'>${user.name}</span>
+								<span class='Typs(display-2-strong)' itemprop='name'>${user.name}</span>
 							</div>
 							<span class='As(b) Pend(8px)'></span>
 							<!-- Age -->
 							<span class='As(b)' itemprop='age'>${userItem.getAge()}</span>
-							</div>
 						</div>
-						<!-- Distance -->
-						<div class="D(f) Row Typs(body-1-regular)" style="transform: translateY(-20px);">
-							<div class="D(ib) Va(t)">
+					</div>
+					<!-- Distance -->
+					<div class="D(f) Row Typs(body-1-regular)" style="transform: translateY(-20px);">
+						<div class="D(ib) Va(t)">
 							<svg focusable="false" aria-hidden="true" role="presentation" viewBox="0 0 24 24" width="24px" height="24px" class="Va(m) Sq(16px)">
 								<g fill="#fff" stroke="#fff" stroke-width=".5" fill-rule="evenodd">
 									<path d="M11.436 21.17l-.185-.165a35.36 35.36 0 0 1-3.615-3.801C5.222 14.244 4 11.658 4 9.524 4 5.305 7.267 2 11.436 2c4.168 0 7.437 3.305 7.437 7.524 0 4.903-6.953 11.214-7.237 11.48l-.2.167zm0-18.683c-3.869 0-6.9 3.091-6.9 7.037 0 4.401 5.771 9.927 6.897 10.972 1.12-1.054 6.902-6.694 6.902-10.95.001-3.968-3.03-7.059-6.9-7.059h.001z" />
 									<path d="M11.445 12.5a2.945 2.945 0 0 1-2.721-1.855 3.04 3.04 0 0 1 .641-3.269 2.905 2.905 0 0 1 3.213-.645 3.003 3.003 0 0 1 1.813 2.776c-.006 1.653-1.322 2.991-2.946 2.993zm0-5.544c-1.378 0-2.496 1.139-2.498 2.542 0 1.404 1.115 2.544 2.495 2.546a2.52 2.52 0 0 0 2.502-2.535 2.527 2.527 0 0 0-2.499-2.545v-.008z" />
 								</g>
 							</svg>
-							</div>
-							<div class="Us(t) Va(m) D(ib) NetWidth(100%,24px) C($c-ds-text-secondary-overlay) Ell">
+						</div>
+						<div class="Us(t) Va(m) D(ib) NetWidth(100%,24px) C($c-ds-text-secondary-overlay) Ell">
 							${user.distance_mi} miles away
-							</div>
-						</div>
-						<!-- Bio -->
-						<span class='like-user-bio' style='-webkit-box-orient: vertical; display: -webkit-box; -webkit-line-clamp: 3; max-height: 63px; overflow-y: hidden; text-overflow: ellipsis; transform: translateY(-20px);'>${
-							user.bio
-						}</span>
-						</div>
 						</div>
 					</div>
+					<!-- Bio -->
+					<span class='like-user-bio' style='-webkit-box-orient: vertical; display: -webkit-box; -webkit-line-clamp: 3; max-height: 63px; overflow-y: hidden; text-overflow: ellipsis; transform: translateY(-20px);'>${user.bio}</span>
 				`;
 
-				// deblur
-				teaserEl.id = 'teaser-' + userId;
-				teaserEl.classList.add('teaser', 'like-action-button', 'like-action-next-photo');
-				teaserEl.style.backgroundSize = 'cover';
 				teaserEl.style.backgroundImage = `url(${user.photos[0].url})`;
 			});
 		} catch (err) {
@@ -352,10 +368,10 @@ function updateUserInfos() {
 
 	// update the like elements
 	for (const likeEl of likesGridEl.children) {
-		// classes
-		likeEl.classList.remove('Cur(p)');
+		// don't update the element if it is invisible
+		if (likeEl.style.display === 'none') continue;
 
-		// styles
+		likeEl.classList.remove('Cur(p)');
 		likeEl.style.removeProperty('transform');
 		likeEl.style.position = 'relative';
 		likeEl.style.backgroundColor = 'black';
@@ -363,98 +379,50 @@ function updateUserInfos() {
 		likeEl.style.marginTop = '0';
 		likeEl.style.marginBottom = '0';
 
-		/** @type {HTMLElement | null} */
-		const infoContainerEl = likeEl.querySelector('.like-user-info');
-
-		if (!infoContainerEl) continue;
-
-		/** @type {HTMLElement | null} */
-		const userNameEl = infoContainerEl.querySelector('.like-user-name');
-		/** @type {HTMLElement | null} */
-		const userBioEl = infoContainerEl.querySelector('.like-user-bio');
-
-		if (!userNameEl || !userBioEl) continue;
-
-		// don't update the element if it is invisible
-		if (likeEl.style.display === 'none') continue;
-
 		const userId = likeEl.dataset.userId;
 
+		// only update if user was loaded
 		if (!userId) continue;
 
 		const userItem = cache.get(userId);
 
 		if (!userItem) continue;
 
-		const user = userItem.user;
-		const teaserEl = document.getElementById(`teaser-${userId}`);
-
-		if (!teaserEl) continue;
-
-		// only update if user was loaded
-		if (!userId) continue;
-
 		// only update the container once
 		if (likeEl.dataset.infoSet) continue;
 
 		likeEl.dataset.infoSet = 'true';
 
-		// update info container
+		/** @type {HTMLElement | null} */
+		const infoContainerEl = likeEl.querySelector('.like-user-info');
 
-		const userBioElHeight = userBioEl.getBoundingClientRect().height;
-
-		userNameEl.style.transform = `translateY(-${
-			userBioElHeight + 20 /* distance height */ + 20 /* name height */ + 20 /* action buttons */
-		}px)`;
-		infoContainerEl.style.opacity = `1`;
+		if (!infoContainerEl) continue;
 
 		// add action buttons
 		likeEl.innerHTML += `
 			<div class='like-actions' style='align-items: center; background-image: linear-gradient(to top, #0004, #0001); border-radius: 8px; display: flex; height: 30px; justify-content: space-around; left: 5px; padding: 2px; position: absolute; bottom: 5px; width: calc(100% - 5px * 2);'>
 				<!-- Hide -->
 				<button class='like-action-button like-action-pass button Lts($ls-s) Cur(p) Tt(u) Bdrs(50%) P(0) Fw($semibold) focus-button-style Bxsh($bxsh-btn) Wc($transform) Pe(a) Scale(1.1):h Scale(.9):a' type='button' style='cursor: pointer; height: 24px; width: 24px;' draggable='false'>
-				<span class='Pos(r) Z(1) Expand'>
-				<span class='D(b) Expand' style='transform: scale(1); filter: none;'>
-				<svg focusable='false' aria-hidden='true' role='presentation' viewBox='0 0 24 24' width='24px' height='24px' class='Scale(.75) Expand'>
-					<path d='m15.44 12 4.768 4.708c1.056.977 1.056 2.441 0 3.499-.813 1.057-2.438 1.057-3.413 0L12 15.52l-4.713 4.605c-.975 1.058-2.438 1.058-3.495 0-1.056-.813-1.056-2.44 0-3.417L8.47 12 3.874 7.271c-1.138-.976-1.138-2.44 0-3.417a1.973 1.973 0 0 1 3.25 0L12 8.421l4.713-4.567c.975-1.139 2.438-1.139 3.413 0 1.057.814 1.057 2.44 0 3.417L15.44 12Z' fill='var(--fill--background-nope, none)' />
-				</svg>
-				</span>
-				</span>
+					<span class='Pos(r) Z(1) Expand'>
+						<span class='D(b) Expand' style='transform: scale(1); filter: none;'>
+							<svg focusable='false' aria-hidden='true' role='presentation' viewBox='0 0 24 24' width='24px' height='24px' class='Scale(.75) Expand'>
+								<path d='m15.44 12 4.768 4.708c1.056.977 1.056 2.441 0 3.499-.813 1.057-2.438 1.057-3.413 0L12 15.52l-4.713 4.605c-.975 1.058-2.438 1.058-3.495 0-1.056-.813-1.056-2.44 0-3.417L8.47 12 3.874 7.271c-1.138-.976-1.138-2.44 0-3.417a1.973 1.973 0 0 1 3.25 0L12 8.421l4.713-4.567c.975-1.139 2.438-1.139 3.413 0 1.057.814 1.057 2.44 0 3.417L15.44 12Z' fill='var(--fill--background-nope, none)' />
+							</svg>
+						</span>
+					</span>
 				</button>
 				<!-- Like -->
 				<button class='like-action-button like-action-like button Lts($ls-s) Cur(p) Tt(u) Bdrs(50%) P(0) Fw($semibold) focus-button-style Bxsh($bxsh-btn) Wc($transform) Pe(a) Scale(1.1):h Scale(.9):a' type='button' style='cursor: pointer; height: 24px; width: 24px;' draggable='false'>
-				<span class='Pos(r) Z(1) Expand'>
-				<span class='D(b) Expand' style='transform: scale(1); filter: none;'>
-				<svg focusable='false' aria-hidden='true' role='presentation' viewBox='0 0 24 24' width='24px' height='24px' class='Scale(.75) Expand'>
-					<path d='M21.994 10.225c0-3.598-2.395-6.212-5.72-6.212-1.78 0-2.737.647-4.27 2.135C10.463 4.66 9.505 4 7.732 4 4.407 4 2 6.62 2 10.231c0 1.52.537 2.95 1.533 4.076l8.024 7.357c.246.22.647.22.886 0l7.247-6.58.44-.401.162-.182.168-.174a6.152 6.152 0 0 0 1.54-4.09' fill='var(--fill--background-like, none)' />
-				</svg>
-				</span>
-				</span>
+					<span class='Pos(r) Z(1) Expand'>
+						<span class='D(b) Expand' style='transform: scale(1); filter: none;'>
+							<svg focusable='false' aria-hidden='true' role='presentation' viewBox='0 0 24 24' width='24px' height='24px' class='Scale(.75) Expand'>
+								<path d='M21.994 10.225c0-3.598-2.395-6.212-5.72-6.212-1.78 0-2.737.647-4.27 2.135C10.463 4.66 9.505 4 7.732 4 4.407 4 2 6.62 2 10.231c0 1.52.537 2.95 1.533 4.076l8.024 7.357c.246.22.647.22.886 0l7.247-6.58.44-.401.162-.182.168-.174a6.152 6.152 0 0 0 1.54-4.09' fill='var(--fill--background-like, none)' />
+							</svg>
+						</span>
+					</span>
 				</button>
 			</div>
 		`;
-
-		// add photo selector
-		const photoSelectorContainer = document.createElement('div');
-		photoSelectorContainer.setAttribute(
-			'class',
-			'photo-selectors CenterAlign D(f) Fxd(r) W(100%) Px(8px) Pos(a) Iso(i)'
-		);
-		photoSelectorContainer.style.top = '5px';
-		likeEl.appendChild(photoSelectorContainer);
-
-		for (let i = 0; i < user.photos.length; i++) {
-			const photoButton = document.createElement('button');
-			photoButton.setAttribute(
-				'class',
-				'like-action-button like-action-photo bullet D(ib) Va(m) Cnt($blank)::a D(b)::a Cur(p) H(4px)::a W(100%)::a Py(4px) Px(2px) W(100%) Bdrs(100px)::a focus-background-style ' +
-					(i == 0
-						? 'Bgc($c-ds-background-tappy-indicator-active)::a bullet--active'
-						: 'Bgc($c-ds-background-tappy-indicator-inactive)::a')
-			);
-			photoButton.dataset.photoIndex = i.toString();
-			photoSelectorContainer.appendChild(photoButton);
-		}
 
 		// handle like element click
 		likeEl.addEventListener(
@@ -479,16 +447,15 @@ function updateUserInfos() {
 				} else if (currentParent.classList.contains('like-action-like')) {
 					like(userItem);
 				} else {
+					if (!userItem.user) return;
+
 					if (currentParent.classList.contains('like-action-photo')) {
 						const index = parseInt(currentParent.dataset.photoIndex ?? '0');
-						showPhoto(likeEl, userItem.photoIndex, index, user.photos[index].url);
+						showPhoto(likeEl, userItem.photoIndex, index, userItem.user.photos[index].url);
 						userItem.photoIndex = index;
 					} else if (currentParent.classList.contains('like-action-next-photo')) {
 						const oldIndex = userItem.photoIndex;
-						const photoUrl =
-							event.offsetX < currentParent.clientWidth / 2
-								? userItem.getPreviousPhoto()
-								: userItem.getNextPhoto();
+						const photoUrl = event.offsetX < currentParent.clientWidth / 2 ? userItem.getPreviousPhoto() : userItem.getNextPhoto();
 						showPhoto(likeEl, oldIndex, userItem.photoIndex, photoUrl);
 					}
 
@@ -499,6 +466,35 @@ function updateUserInfos() {
 			},
 			true
 		);
+
+		/** @type {HTMLElement | null} */
+		const userNameEl = infoContainerEl.querySelector('.like-user-name');
+		/** @type {HTMLElement | null} */
+		const userBioEl = infoContainerEl.querySelector('.like-user-bio');
+
+		if (!userNameEl || !userBioEl) continue;
+
+		const user = userItem.user;
+
+		// update info container
+
+		const userBioElHeight = userBioEl.getBoundingClientRect().height;
+
+		userNameEl.style.transform = `translateY(-${userBioElHeight + 20 /* distance height */ + 20 /* name height */ + 20 /* action buttons */}px)`;
+		infoContainerEl.style.opacity = `1`;
+
+		// add photo selector
+		const photoSelectorContainer = document.createElement('div');
+		photoSelectorContainer.setAttribute('class', 'photo-selectors CenterAlign D(f) Fxd(r) W(100%) Px(8px) Pos(a) Iso(i)');
+		photoSelectorContainer.style.top = '5px';
+		likeEl.appendChild(photoSelectorContainer);
+
+		for (let i = 0; i < user.photos.length; i++) {
+			const photoButton = document.createElement('button');
+			photoButton.setAttribute('class', 'like-action-button like-action-photo bullet D(ib) Va(m) Cnt($blank)::a D(b)::a Cur(p) H(4px)::a W(100%)::a Py(4px) Px(2px) W(100%) Bdrs(100px)::a focus-background-style ' + (i == 0 ? 'Bgc($c-ds-background-tappy-indicator-active)::a bullet--active' : 'Bgc($c-ds-background-tappy-indicator-inactive)::a'));
+			photoButton.dataset.photoIndex = i.toString();
+			photoSelectorContainer.appendChild(photoButton);
+		}
 	}
 
 	const totalLikesCount = likesGridEl?.childElementCount ?? 0;
@@ -507,29 +503,19 @@ function updateUserInfos() {
 		if (!likesGridContainerEl.dataset.noLikes) {
 			likesGridContainerEl.dataset.noLikes = 'true';
 
-			if (likesGridContainerEl.dataset.loadingTextAdded)
-				likesGridContainerEl.querySelector('.loading-container')?.remove();
+			if (likesGridContainerEl.dataset.loadingTextAdded) likesGridContainerEl.querySelector('.loading-container')?.remove();
 
 			const noLikesContainer = document.createElement('DIV');
 			noLikesContainer.classList.add('no-likes-container');
-			noLikesContainer.setAttribute(
-				'style',
-				'align-items: center; background-color: black; display: flex; height: 100%; justify-content: center; left: 0; position: absolute; text-align: center; top: 0; width: 100%; z-index: 50;'
-			);
+			noLikesContainer.setAttribute('style', 'align-items: center; background-color: black; display: flex; height: 100%; justify-content: center; left: 0; position: absolute; text-align: center; top: 0; width: 100%; z-index: 50;');
 			likesGridContainerEl.insertBefore(noLikesContainer, likesGridContainerEl.firstChild);
 
 			const noLikesText = document.createElement('H4');
-			noLikesText.setAttribute(
-				'style',
-				'color: #d2d2d3; font-size: 40px; letter-spacing: 2px; text-transform: uppercase;'
-			);
+			noLikesText.setAttribute('style', 'color: #d2d2d3; font-size: 40px; letter-spacing: 2px; text-transform: uppercase;');
 			noLikesText.innerText = 'No likes available';
 			noLikesContainer.appendChild(noLikesText);
 		}
-	} else if (
-		document.querySelectorAll('div[data-info-set]').length > 0 ||
-		document.querySelectorAll('div[data-invalid]').length == totalLikesCount
-	) {
+	} else if (document.querySelectorAll('div[data-info-set]').length > 0 || document.querySelectorAll('div[data-invalid]').length == totalLikesCount) {
 		if (!likesGridContainerEl.dataset.loadingComplete) {
 			likesGridContainerEl.dataset.loadingComplete = 'true';
 
@@ -607,23 +593,16 @@ function updateUserFiltering() {
 			filterButtonEl.addEventListener('click', () => {
 				setTimeout(() => {
 					// remove "show all" button
-					for (const element of document.querySelectorAll(
-						'div[role="dialog"] .menuItem__contents > div > div[role="button"]'
-					)) {
+					for (const element of document.querySelectorAll('div[role="dialog"] .menuItem__contents > div > div[role="button"]')) {
 						element.remove();
 					}
 
-					const applyContainer = document.querySelector(
-						'div[role="dialog"] > div:not(.menuItem):not(.CenterAlign)'
-					);
+					const applyContainer = document.querySelector('div[role="dialog"] > div:not(.menuItem):not(.CenterAlign)');
 
 					if (applyContainer != null) {
 						applyContainer.innerHTML = '';
 						applyContainer.className = '';
-						applyContainer.setAttribute(
-							'style',
-							'align-items: center; display: flex; flex-shrink: 0; font-size: 20px; height: 50px; justify-content: center; width: 100%;'
-						);
+						applyContainer.setAttribute('style', 'align-items: center; display: flex; flex-shrink: 0; font-size: 20px; height: 50px; justify-content: center; width: 100%;');
 
 						const applyButtonEl = document.createElement('button');
 						applyButtonEl.innerText = 'Apply';
@@ -637,21 +616,14 @@ function updateUserFiltering() {
 							(event) => {
 								event.stopImmediatePropagation();
 
-								const dialogMenuItemContents = document.querySelectorAll(
-									'div[role="dialog"] > .menuItem > .menuItem__contents > div:nth-of-type(2)'
-								);
+								const dialogMenuItemContents = document.querySelectorAll('div[role="dialog"] > .menuItem > .menuItem__contents > div:nth-of-type(2)');
 
 								// max distance
 								const maxDistanceElement = dialogMenuItemContents[0].querySelector('div[style]');
 
 								if (!maxDistanceElement) return;
 
-								let maxDistance = Math.floor(
-									(maxDistanceElement.clientWidth /
-										(maxDistanceElement.parentElement?.clientWidth ?? 1)) *
-										(161 - 2) +
-										2
-								);
+								let maxDistance = Math.floor((maxDistanceElement.clientWidth / (maxDistanceElement.parentElement?.clientWidth ?? 1)) * (161 - 2) + 2);
 
 								if (maxDistance == 161) maxDistance = Number.MAX_SAFE_INTEGER;
 
@@ -660,19 +632,8 @@ function updateUserFiltering() {
 
 								if (!ageRangeElement) return;
 
-								const ageRangeStart = Math.round(
-									(parseFloat(getComputedStyle(ageRangeElement).left.replace('px', '')) /
-										(ageRangeElement.parentElement?.clientWidth ?? 1)) *
-										(100 - 18) +
-										18
-								);
-								let ageRangeEnd =
-									ageRangeStart +
-									Math.round(
-										(ageRangeElement.clientWidth /
-											(ageRangeElement.parentElement?.clientWidth ?? 1)) *
-											(100 - 18)
-									);
+								const ageRangeStart = Math.round((parseFloat(getComputedStyle(ageRangeElement).left.replace('px', '')) / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18) + 18);
+								let ageRangeEnd = ageRangeStart + Math.round((ageRangeElement.clientWidth / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18));
 
 								if (ageRangeEnd == 100) ageRangeEnd = Number.MAX_SAFE_INTEGER;
 
@@ -683,11 +644,7 @@ function updateUserFiltering() {
 								const photosOptions = dialogMenuItemContents[2].querySelectorAll('div[role="option"]');
 
 								for (const minimumPhotosOption of photosOptions) {
-									if (
-										minimumPhotosOption
-											.getAttribute('class')
-											?.includes('c-ds-border-passions-shared')
-									) {
+									if (minimumPhotosOption.getAttribute('class')?.includes('c-ds-border-passions-shared')) {
 										minimumPhotosAmount = parseInt(minimumPhotosOption.innerText);
 										break;
 									}
@@ -697,18 +654,14 @@ function updateUserFiltering() {
 								const interests = [];
 
 								/** @type {NodeListOf<HTMLDivElement>} */
-								const interestOptions =
-									dialogMenuItemContents[3].querySelectorAll('div[role="option"]');
+								const interestOptions = dialogMenuItemContents[3].querySelectorAll('div[role="option"]');
 
 								for (const interestOption of interestOptions) {
-									if (interestOption.getAttribute('class')?.includes('c-ds-border-passions-shared'))
-										interests.push(interestOption.innerText);
+									if (interestOption.getAttribute('class')?.includes('c-ds-border-passions-shared')) interests.push(interestOption.innerText);
 								}
 
 								/** @type {NodeListOf<HTMLInputElement>} */
-								const dialogMenuSelects = document.querySelectorAll(
-									'div[role="dialog"] > .menuItem > .menuItem__contents .menuItem__select input'
-								);
+								const dialogMenuSelects = document.querySelectorAll('div[role="dialog"] > .menuItem > .menuItem__contents .menuItem__select input');
 
 								// verified
 								const verifiedRequired = dialogMenuSelects[0].checked;
@@ -728,20 +681,17 @@ function updateUserFiltering() {
 									if (!userItem) continue;
 
 									const user = userItem.user;
-									const userInterests = Array.from(user.user_interests ?? []).map(
-										(interest) => interest.name
-									);
+
+									if (!user) continue;
+
+									const userInterests = Array.from(user.user_interests ?? []).map((interest) => interest.name);
 
 									let matches = true;
 
 									// check radius
 									if (!user.hide_distance && user.distance_mi > maxDistance) matches = false;
 									// check age range
-									else if (
-										!user.hide_age &&
-										(userItem.getAge() < ageRangeStart || userItem.getAge() > ageRangeEnd)
-									)
-										matches = false;
+									else if (!user.hide_age && (userItem.getAge() < ageRangeStart || userItem.getAge() > ageRangeEnd)) matches = false;
 									// check photos amount
 									else if (user.photos.length < minimumPhotosAmount) matches = false;
 									// check verified
@@ -760,8 +710,7 @@ function updateUserFiltering() {
 
 								// close dialog
 								/** @type {Element | null | undefined} */
-								const applyButton =
-									document.querySelector('div[role="dialog"]')?.parentElement?.firstElementChild;
+								const applyButton = document.querySelector('div[role="dialog"]')?.parentElement?.firstElementChild;
 
 								applyButton?.click();
 
@@ -796,16 +745,13 @@ function updateUserFiltering() {
  * @param {UserCacheItem} userItem
  */
 async function pass(userItem) {
-	const response = await fetch(
-		`https://api.gotinder.com/pass/${userItem.userId}?s_number=${userItem.user.s_number}`,
-		{
-			headers: {
-				'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
-				platform: 'android',
-			},
-			method: 'GET',
-		}
-	);
+	const response = await fetch(`https://api.gotinder.com/pass/${userItem.userId}?s_number=${userItem.user.s_number}`, {
+		headers: {
+			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
+			platform: 'android',
+		},
+		method: 'GET',
+	});
 
 	hide(userItem);
 }
@@ -920,12 +866,8 @@ async function waitForApp() {
 async function main() {
 	// check if running as a userscript
 	if (typeof GM_info === 'undefined') {
-		console.warn(
-			'[TINDER DEBLUR]: The only supported way of running this script is through a userscript management browser addons like Violentmonkey, Tampermonkey or Greasemonkey!'
-		);
-		console.warn(
-			'[TINDER DEBLUR]: Script was not terminated, but you should really look into the correct way of running it.'
-		);
+		console.warn('[TINDER DEBLUR]: The only supported way of running this script is through a userscript management browser addons like Violentmonkey, Tampermonkey or Greasemonkey!');
+		console.warn('[TINDER DEBLUR]: Script was not terminated, but you should really look into the correct way of running it.');
 	}
 
 	// wait for a full page load
