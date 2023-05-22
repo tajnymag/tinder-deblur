@@ -3,7 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://tinder.com/*
 // @grant       none
-// @version     4.2a
+// @version     4.3a
 // @author      Tajnymag
 // @downloadURL https://raw.githubusercontent.com/tajnymag/tinder-deblur/main/tinder.user.js
 // @description Simple script using the official Tinder API to get clean photos of the users who liked you
@@ -161,11 +161,17 @@ async function unblur() {
 
 		const loadingContainer = document.createElement('DIV');
 		loadingContainer.classList.add('loading-container');
-		loadingContainer.setAttribute('style', 'align-items: center; background-color: black; display: flex; height: 100%; justify-content: center; left: 0; position: absolute; text-align: center; top: 0; width: 100%; z-index: 50;');
+		loadingContainer.setAttribute(
+			'style',
+			'align-items: center; background-color: black; display: flex; height: 100%; justify-content: center; left: 0; position: absolute; text-align: center; top: 0; width: 100%; z-index: 50;'
+		);
 		likesGridContainerEl.insertBefore(loadingContainer, likesGridContainerEl.firstChild);
 
 		const loadingText = document.createElement('H4');
-		loadingText.setAttribute('style', 'color: #d2d2d3; font-size: 40px; letter-spacing: 2px; text-transform: uppercase;');
+		loadingText.setAttribute(
+			'style',
+			'color: #d2d2d3; font-size: 40px; letter-spacing: 2px; text-transform: uppercase;'
+		);
 		loadingText.innerText = 'Loading';
 		loadingContainer.appendChild(loadingText);
 	}
@@ -299,7 +305,9 @@ async function unblur() {
 						</div>
 					</div>
 					<!-- Bio -->
-					<span class='like-user-bio' style='-webkit-box-orient: vertical; display: -webkit-box; -webkit-line-clamp: 3; max-height: 63px; overflow-y: hidden; text-overflow: ellipsis; transform: translateY(-20px);'>${user.bio}</span>
+					<span class='like-user-bio' style='-webkit-box-orient: vertical; display: -webkit-box; -webkit-line-clamp: 3; max-height: 63px; overflow-y: hidden; text-overflow: ellipsis; transform: translateY(-20px);'>${
+						user.bio
+					}</span>
 				`;
 
 				teaserEl.style.backgroundImage = `url(${user.photos[0].url})`;
@@ -455,7 +463,10 @@ function updateUserInfos() {
 						userItem.photoIndex = index;
 					} else if (currentParent.classList.contains('like-action-next-photo')) {
 						const oldIndex = userItem.photoIndex;
-						const photoUrl = event.offsetX < currentParent.clientWidth / 2 ? userItem.getPreviousPhoto() : userItem.getNextPhoto();
+						const photoUrl =
+							event.offsetX < currentParent.clientWidth / 2
+								? userItem.getPreviousPhoto()
+								: userItem.getNextPhoto();
 						showPhoto(likeEl, oldIndex, userItem.photoIndex, photoUrl);
 					}
 
@@ -480,18 +491,29 @@ function updateUserInfos() {
 
 		const userBioElHeight = userBioEl.getBoundingClientRect().height;
 
-		userNameEl.style.transform = `translateY(-${userBioElHeight + 20 /* distance height */ + 20 /* name height */ + 20 /* action buttons */}px)`;
+		userNameEl.style.transform = `translateY(-${
+			userBioElHeight + 20 /* distance height */ + 20 /* name height */ + 20 /* action buttons */
+		}px)`;
 		infoContainerEl.style.opacity = `1`;
 
 		// add photo selector
 		const photoSelectorContainer = document.createElement('div');
-		photoSelectorContainer.setAttribute('class', 'photo-selectors CenterAlign D(f) Fxd(r) W(100%) Px(8px) Pos(a) Iso(i)');
+		photoSelectorContainer.setAttribute(
+			'class',
+			'photo-selectors CenterAlign D(f) Fxd(r) W(100%) Px(8px) Pos(a) Iso(i)'
+		);
 		photoSelectorContainer.style.top = '5px';
 		likeEl.appendChild(photoSelectorContainer);
 
 		for (let i = 0; i < user.photos.length; i++) {
 			const photoButton = document.createElement('button');
-			photoButton.setAttribute('class', 'like-action-button like-action-photo bullet D(ib) Va(m) Cnt($blank)::a D(b)::a Cur(p) H(4px)::a W(100%)::a Py(4px) Px(2px) W(100%) Bdrs(100px)::a focus-background-style ' + (i == 0 ? 'Bgc($c-ds-background-tappy-indicator-active)::a bullet--active' : 'Bgc($c-ds-background-tappy-indicator-inactive)::a'));
+			photoButton.setAttribute(
+				'class',
+				'like-action-button like-action-photo bullet D(ib) Va(m) Cnt($blank)::a D(b)::a Cur(p) H(4px)::a W(100%)::a Py(4px) Px(2px) W(100%) Bdrs(100px)::a focus-background-style ' +
+					(i == 0
+						? 'Bgc($c-ds-background-tappy-indicator-active)::a bullet--active'
+						: 'Bgc($c-ds-background-tappy-indicator-inactive)::a')
+			);
 			photoButton.dataset.photoIndex = i.toString();
 			photoSelectorContainer.appendChild(photoButton);
 		}
@@ -503,19 +525,29 @@ function updateUserInfos() {
 		if (!likesGridContainerEl.dataset.noLikes) {
 			likesGridContainerEl.dataset.noLikes = 'true';
 
-			if (likesGridContainerEl.dataset.loadingTextAdded) likesGridContainerEl.querySelector('.loading-container')?.remove();
+			if (likesGridContainerEl.dataset.loadingTextAdded)
+				likesGridContainerEl.querySelector('.loading-container')?.remove();
 
 			const noLikesContainer = document.createElement('DIV');
 			noLikesContainer.classList.add('no-likes-container');
-			noLikesContainer.setAttribute('style', 'align-items: center; background-color: black; display: flex; height: 100%; justify-content: center; left: 0; position: absolute; text-align: center; top: 0; width: 100%; z-index: 50;');
+			noLikesContainer.setAttribute(
+				'style',
+				'align-items: center; background-color: black; display: flex; height: 100%; justify-content: center; left: 0; position: absolute; text-align: center; top: 0; width: 100%; z-index: 50;'
+			);
 			likesGridContainerEl.insertBefore(noLikesContainer, likesGridContainerEl.firstChild);
 
 			const noLikesText = document.createElement('H4');
-			noLikesText.setAttribute('style', 'color: #d2d2d3; font-size: 40px; letter-spacing: 2px; text-transform: uppercase;');
+			noLikesText.setAttribute(
+				'style',
+				'color: #d2d2d3; font-size: 40px; letter-spacing: 2px; text-transform: uppercase;'
+			);
 			noLikesText.innerText = 'No likes available';
 			noLikesContainer.appendChild(noLikesText);
 		}
-	} else if (document.querySelectorAll('div[data-info-set]').length > 0 || document.querySelectorAll('div[data-invalid]').length == totalLikesCount) {
+	} else if (
+		document.querySelectorAll('div[data-info-set]').length > 0 ||
+		document.querySelectorAll('div[data-invalid]').length == totalLikesCount
+	) {
 		if (!likesGridContainerEl.dataset.loadingComplete) {
 			likesGridContainerEl.dataset.loadingComplete = 'true';
 
@@ -593,16 +625,23 @@ function updateUserFiltering() {
 			filterButtonEl.addEventListener('click', () => {
 				setTimeout(() => {
 					// remove "show all" button
-					for (const element of document.querySelectorAll('div[role="dialog"] .menuItem__contents > div > div[role="button"]')) {
+					for (const element of document.querySelectorAll(
+						'div[role="dialog"] .menuItem__contents > div > div[role="button"]'
+					)) {
 						element.remove();
 					}
 
-					const applyContainer = document.querySelector('div[role="dialog"] > div:not(.menuItem):not(.CenterAlign)');
+					const applyContainer = document.querySelector(
+						'div[role="dialog"] > div:not(.menuItem):not(.CenterAlign)'
+					);
 
 					if (applyContainer != null) {
 						applyContainer.innerHTML = '';
 						applyContainer.className = '';
-						applyContainer.setAttribute('style', 'align-items: center; display: flex; flex-shrink: 0; font-size: 20px; height: 50px; justify-content: center; width: 100%;');
+						applyContainer.setAttribute(
+							'style',
+							'align-items: center; display: flex; flex-shrink: 0; font-size: 20px; height: 50px; justify-content: center; width: 100%;'
+						);
 
 						const applyButtonEl = document.createElement('button');
 						applyButtonEl.innerText = 'Apply';
@@ -616,14 +655,21 @@ function updateUserFiltering() {
 							(event) => {
 								event.stopImmediatePropagation();
 
-								const dialogMenuItemContents = document.querySelectorAll('div[role="dialog"] > .menuItem > .menuItem__contents > div:nth-of-type(2)');
+								const dialogMenuItemContents = document.querySelectorAll(
+									'div[role="dialog"] > .menuItem > .menuItem__contents > div:nth-of-type(2)'
+								);
 
 								// max distance
 								const maxDistanceElement = dialogMenuItemContents[0].querySelector('div[style]');
 
 								if (!maxDistanceElement) return;
 
-								let maxDistance = Math.floor((maxDistanceElement.clientWidth / (maxDistanceElement.parentElement?.clientWidth ?? 1)) * (161 - 2) + 2);
+								let maxDistance = Math.floor(
+									(maxDistanceElement.clientWidth /
+										(maxDistanceElement.parentElement?.clientWidth ?? 1)) *
+										(161 - 2) +
+										2
+								);
 
 								if (maxDistance == 161) maxDistance = Number.MAX_SAFE_INTEGER;
 
@@ -632,8 +678,19 @@ function updateUserFiltering() {
 
 								if (!ageRangeElement) return;
 
-								const ageRangeStart = Math.round((parseFloat(getComputedStyle(ageRangeElement).left.replace('px', '')) / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18) + 18);
-								let ageRangeEnd = ageRangeStart + Math.round((ageRangeElement.clientWidth / (ageRangeElement.parentElement?.clientWidth ?? 1)) * (100 - 18));
+								const ageRangeStart = Math.round(
+									(parseFloat(getComputedStyle(ageRangeElement).left.replace('px', '')) /
+										(ageRangeElement.parentElement?.clientWidth ?? 1)) *
+										(100 - 18) +
+										18
+								);
+								let ageRangeEnd =
+									ageRangeStart +
+									Math.round(
+										(ageRangeElement.clientWidth /
+											(ageRangeElement.parentElement?.clientWidth ?? 1)) *
+											(100 - 18)
+									);
 
 								if (ageRangeEnd == 100) ageRangeEnd = Number.MAX_SAFE_INTEGER;
 
@@ -644,7 +701,11 @@ function updateUserFiltering() {
 								const photosOptions = dialogMenuItemContents[2].querySelectorAll('div[role="option"]');
 
 								for (const minimumPhotosOption of photosOptions) {
-									if (minimumPhotosOption.getAttribute('class')?.includes('c-ds-border-passions-shared')) {
+									if (
+										minimumPhotosOption
+											.getAttribute('class')
+											?.includes('c-ds-border-passions-shared')
+									) {
 										minimumPhotosAmount = parseInt(minimumPhotosOption.innerText);
 										break;
 									}
@@ -654,14 +715,18 @@ function updateUserFiltering() {
 								const interests = [];
 
 								/** @type {NodeListOf<HTMLDivElement>} */
-								const interestOptions = dialogMenuItemContents[3].querySelectorAll('div[role="option"]');
+								const interestOptions =
+									dialogMenuItemContents[3].querySelectorAll('div[role="option"]');
 
 								for (const interestOption of interestOptions) {
-									if (interestOption.getAttribute('class')?.includes('c-ds-border-passions-shared')) interests.push(interestOption.innerText);
+									if (interestOption.getAttribute('class')?.includes('c-ds-border-passions-shared'))
+										interests.push(interestOption.innerText);
 								}
 
 								/** @type {NodeListOf<HTMLInputElement>} */
-								const dialogMenuSelects = document.querySelectorAll('div[role="dialog"] > .menuItem > .menuItem__contents .menuItem__select input');
+								const dialogMenuSelects = document.querySelectorAll(
+									'div[role="dialog"] > .menuItem > .menuItem__contents .menuItem__select input'
+								);
 
 								// verified
 								const verifiedRequired = dialogMenuSelects[0].checked;
@@ -684,14 +749,20 @@ function updateUserFiltering() {
 
 									if (!user) continue;
 
-									const userInterests = Array.from(user.user_interests ?? []).map((interest) => interest.name);
+									const userInterests = Array.from(user.user_interests ?? []).map(
+										(interest) => interest.name
+									);
 
 									let matches = true;
 
 									// check radius
 									if (!user.hide_distance && user.distance_mi > maxDistance) matches = false;
 									// check age range
-									else if (!user.hide_age && (userItem.getAge() < ageRangeStart || userItem.getAge() > ageRangeEnd)) matches = false;
+									else if (
+										!user.hide_age &&
+										(userItem.getAge() < ageRangeStart || userItem.getAge() > ageRangeEnd)
+									)
+										matches = false;
 									// check photos amount
 									else if (user.photos.length < minimumPhotosAmount) matches = false;
 									// check verified
@@ -710,7 +781,8 @@ function updateUserFiltering() {
 
 								// close dialog
 								/** @type {Element | null | undefined} */
-								const applyButton = document.querySelector('div[role="dialog"]')?.parentElement?.firstElementChild;
+								const applyButton =
+									document.querySelector('div[role="dialog"]')?.parentElement?.firstElementChild;
 
 								applyButton?.click();
 
@@ -741,17 +813,110 @@ function updateUserFiltering() {
 }
 
 /**
+ * Creates a message status icon + text
+ */
+function createMessageStatusElement(parentNode, read) {
+	if (parentNode == null) return;
+
+	const status = document.createElement('div');
+	status.setAttribute(
+		'class',
+		'Pos(r) Fz($2xs) My(8px) Mx(4px) Mih(16px) C($c-ds-text-secondary) D(f) Ai(c) Jc(fe) Fxd(r)'
+	);
+	status.innerHTML = `
+		<div class="D(f) Jc(c) Fxd(r) Mend(8px) Ai(fs)">
+			<svg focusable="false" aria-hidden="false" role="img" viewBox="0 0 24 24" width="24px" height="24px" class="Sq(12px)">
+				<path d="M7.48 14.413l5.74-8.316a.63.63 0 01.9-.142l.917.697c.275.21.33.6.125.876L8.02 17.153a.63.63 0 01-.938.084l-.047-.044a.85.85 0 01-.145-.105l-4.072-3.653a.84.84 0 01-.075-1.173l.524-.612a.84.84 0 011.215-.063l2.996 2.826h.002zm6.353.627l5.747-8.327a.63.63 0 01.9-.143l.917.698c.275.209.33.6.125.877l-7.144 9.622a.63.63 0 01-.938.083l-.023-.023a.842.842 0 01-.217-.137l-2-1.738a.84.84 0 01-.087-1.182l.517-.6a.84.84 0 011.213-.065l.989.933.001.002z" fill="${
+					read ? '#106bd5' : '#fff'
+				}" fill-rule="evenodd" />
+			</svg>
+		</div>
+		<span>${read ? 'Read' : 'Sent'}</span>
+	`;
+
+	parentNode.appendChild(status);
+}
+
+/**
+ * Displays read status below sent messages
+ */
+async function updateMessageInfos(matchId) {
+	/** @type {HTMLDivElement | null} */
+	const lastMessageStatus = document.querySelector('.msg__status');
+
+	if (!lastMessageStatus) return;
+
+	lastMessageStatus.remove();
+
+	fetchMatches().then((matches) => {
+		if (matches == null) return;
+
+		const filteredMatches = matches.filter((match) => match.id === matchId);
+
+		if (filteredMatches.length == 0) return;
+
+		const match = filteredMatches[0];
+		const lastReadMesssageId = match.seen.last_seen_msg_id;
+
+		if (!lastReadMesssageId) return;
+
+		// get message content from last read message
+		fetchMessages(matchId).then((messages) => {
+			if (messages == null) return;
+
+			const filteredMessages = messages.filter((message) => message._id === lastReadMesssageId);
+
+			if (filteredMessages.length == 0) return;
+
+			let lastReadMessage = filteredMessages[0];
+			let currentMessageIndex = messages.indexOf(lastReadMessage);
+
+			while (lastReadMessage.from === match.person._id && currentMessageIndex < messages.length - 1) {
+				lastReadMessage = messages[currentMessageIndex++];
+			}
+
+			// only the matched person sent a message
+			if (!lastReadMessage) return;
+
+			const messageContent = lastReadMessage.message;
+
+			/** @type {NodeListOf<HTMLElement>} */
+			const messageElements = document.querySelectorAll('.msg');
+
+			if (messageElements.length == 0) return;
+
+			for (let i = messageElements.length - 1; i >= 0; i--) {
+				const messageElement = messageElements[i];
+				const messageContainer = messageElement.parentElement?.parentElement;
+
+				if (!messageContainer) continue;
+
+				const isRead = messageElement.innerText === messageContent;
+
+				// only add info to messages sent by the user of this script
+				if (messageContainer.classList.contains('Ta(e)')) createMessageStatusElement(messageContainer, isRead);
+
+				if (isRead) break;
+			}
+		});
+	});
+}
+
+/**
  * Passes a user and hides it from the likes section afterwards
  * @param {UserCacheItem} userItem
  */
 async function pass(userItem) {
-	const response = await fetch(`https://api.gotinder.com/pass/${userItem.userId}?s_number=${userItem.user?.s_number ?? 0}`, {
-		headers: {
-			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
-			platform: 'android',
-		},
-		method: 'GET',
-	});
+	const response = await fetch(
+		`https://api.gotinder.com/pass/${userItem.userId}?s_number=${userItem.user?.s_number ?? 0}`,
+		{
+			headers: {
+				'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
+				platform: 'android',
+			},
+			method: 'GET',
+		}
+	);
 
 	hide(userItem);
 }
@@ -768,14 +933,49 @@ async function like(userItem) {
 			'Content-Type': 'application/json',
 		},
 		method: 'POST',
-		body: JSON.stringify({
-			liked_content_id: userItem.user.photos[0].id,
-			liked_content_type: 'photo',
-			s_number: userItem.user?.s_number ?? 0,
-		}),
+		body: JSON.stringify(
+			userItem.user
+				? {
+						liked_content_id: userItem.user.photos[0].id,
+						liked_content_type: 'photo',
+						s_number: userItem.user.s_number,
+				  }
+				: {
+						s_number: 0,
+				  }
+		),
 	});
 
 	hide(userItem);
+}
+
+/**
+ * Fetches all messages in a conversation using Tinder API
+ * @param {string} matchId
+ * @returns {Promise<any>}
+ */
+async function fetchMessages(matchId) {
+	return fetch(`https://api.gotinder.com/v2/matches/${matchId}/messages?locale=en&count=100`, {
+		headers: {
+			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
+		},
+	})
+		.then((res) => res.json())
+		.then((res) => res.data.messages);
+}
+
+/**
+ * Fetches matches using Tinder API
+ * @returns {Promise<any>}
+ */
+async function fetchMatches() {
+	return fetch('https://api.gotinder.com/v2/matches?locale=en&count=60&message=1', {
+		headers: {
+			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
+		},
+	})
+		.then((res) => res.json())
+		.then((res) => res.data.matches);
 }
 
 /**
@@ -799,6 +999,8 @@ async function fetchTeasers() {
  * @returns {Promise<any>}
  */
 async function fetchUser(id) {
+	/* disabled due to API changes, currently looking for a workaround!
+
 	return fetch(`https://api.gotinder.com/user/${id}`, {
 		headers: {
 			'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken') ?? '',
@@ -806,7 +1008,9 @@ async function fetchUser(id) {
 		},
 	})
 		.then((res) => res.json())
-		.then((res) => res.results);
+		.then((res) => res.results);*/
+
+	return null;
 }
 
 /**
@@ -866,8 +1070,12 @@ async function waitForApp() {
 async function main() {
 	// check if running as a userscript
 	if (typeof GM_info === 'undefined') {
-		console.warn('[TINDER DEBLUR]: The only supported way of running this script is through a userscript management browser addons like Violentmonkey, Tampermonkey or Greasemonkey!');
-		console.warn('[TINDER DEBLUR]: Script was not terminated, but you should really look into the correct way of running it.');
+		console.warn(
+			'[TINDER DEBLUR]: The only supported way of running this script is through a userscript management browser addons like Violentmonkey, Tampermonkey or Greasemonkey!'
+		);
+		console.warn(
+			'[TINDER DEBLUR]: Script was not terminated, but you should really look into the correct way of running it.'
+		);
 	}
 
 	// wait for a full page load
@@ -893,6 +1101,11 @@ async function main() {
 		} else {
 			// clear the cache when not on likes page anymore
 			cache.clear();
+
+			if (location.pathname.startsWith('/app/messages/')) {
+				console.debug('[TINDER DEBLUR]: Updating message infos');
+				updateMessageInfos(location.pathname.substring(location.pathname.lastIndexOf('/') + 1));
+			}
 		}
 
 		// loop based observer (every 2.5s)
