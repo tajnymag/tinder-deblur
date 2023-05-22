@@ -1109,8 +1109,8 @@ async function main() {
 			}
 		}
 
-		// loop based observer (every 2.5s)
-		setTimeout(pageCheckCallback, 2_500);
+		// loop based observer (every 4s)
+		setTimeout(pageCheckCallback, 4_000);
 	};
 
 	pageCheckCallback();
