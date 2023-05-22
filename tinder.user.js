@@ -209,8 +209,9 @@ async function unblur() {
 			likeEl.dataset.invalid = 'true';
 			likeElContent.style.opacity = '0.5';
 			likeEl.innerHTML += `
-				<div class="invalid-text" style="display: flex; justify-content: center; left: 5px; top: 5px; position: absolute; width: calc(100% - 5px * 2);">
-					<p style="background-color: #0008; border-radius: 12.5px; color: #ac0c04; font-size: 14px; padding: 4px 12px; text-align: center; text-transform: uppercase;">Invalid</p>
+				<div class="invalid-text" style="align-items: center; display: flex; flex-direction: column; font-size: 14px; height: calc(100% - 25px * 2); gap: 15px; left: 25px; text-align: center; top: 25px; position: absolute; width: calc(100% - 25px * 2);">
+					<span style="background-color: #0008; border-radius: 12.5px; color: #ac0c04; letter-spacing: 1px; padding: 5px 14px; text-transform: uppercase;">Unable to deblur</span>
+					<span class="invalid-disclaimer" style="background-color: #0004; border-radius: 12.5px; padding: 15px 20px;"><b>This is not a bug!</b><br />Not all likes can be unblurred.</span>
 				</div>
 			`;
 			continue;
