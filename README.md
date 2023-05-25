@@ -1,5 +1,5 @@
 # tinder-deblur
- Simple script using the official Tinder API to get clean photos of the users who liked you
+Simple script using the official Tinder API to get clean photos of the users who liked you
 
 ## How to use
 
@@ -13,11 +13,11 @@
 
 ## How does it work
 
-Initially, Tinder API returned clean profile images on requests that had their headers stripped down. Recently Tinder patched this exploit for the web app. However, they did not patch it for their Android API. So that's what this script is using now.
+Initially, Tinder API returned clean profile images on requests that had their headers stripped down.
+Tinder patched this exploit for the web app. However, they did not patch it for their Android API.
+Recently, Tinder made the user endpoint only accessible to matches, that's why the username, age etc. cannot be seen any more, though the unblur, like and pass functions remain.
 
-Also, the match's profile image URLs can be reconstructed with metadata provided by the matches endpoint.
-
-The fact that it has been working for at least 3 years now is actually quite unexpected. **Be prepared** for this exploit to be patched sooner or later.
+**Be prepared** for this exploit to be patched sooner or later.
 
 ## Contributors
 
