@@ -272,7 +272,7 @@ async function unblur() {
 
 					var userImageElem = document.createElement("img");
 					userImageElem.src = `https://preview.gotinder.com/${teaserUser._id}/original_${teaserUser.photos[0].id}.jpeg`;
-					userImageElem.style = "max-width: 100%; max-height: 100%;";
+					userImageElem.style = "max-width: 100%;";
 
 
 					aClickableElem.appendChild(userImageElem);
