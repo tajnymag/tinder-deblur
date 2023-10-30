@@ -265,7 +265,18 @@ async function unblur() {
 				}
 
 				if (!user) {
-					teaserEl.style.backgroundImage = `url('https://preview.gotinder.com/${teaserUser._id}/original_${teaserUser.photos[0].id}.jpeg')`;
+					// making div clickable (redirects to teaser image url)
+					var aClickableElem = document.createElement("a");
+					aClickableElem.href = `https://preview.gotinder.com/${teaserUser._id}/original_${teaserUser.photos[0].id}.jpeg`;
+					aClickableElem.target = "_blank";
+
+					var userImageElem = document.createElement("img");
+					userImageElem.src = `https://preview.gotinder.com/${teaserUser._id}/original_${teaserUser.photos[0].id}.jpeg`;
+					userImageElem.style = "max-width: 100%; max-height: 100%;";
+
+
+					aClickableElem.appendChild(userImageElem);
+					teaserEl.appendChild(aClickableElem);
 					infoContainerEl.remove();
 
 					console.error(`Could not load user '${userId}'`);
